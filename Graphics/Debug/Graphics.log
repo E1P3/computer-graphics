@@ -1,2 +1,4 @@
 ﻿  main.cpp
-  Graphics.vcxproj -> C:\Users\jansz\source\repos\Graphics\Debug\Graphics.exe
+C:\Users\jansz\Desktop\beans\programming_stuff\computer-graphics\Graphics\main.cpp(85,45): warning C4042: 'pVS': has bad storage class
+C:\Users\jansz\Desktop\beans\programming_stuff\computer-graphics\Graphics\main.cpp(85,69): warning C4042: 'pFS': has bad storage class
+  Graphics.vcxproj -> C:\Users\jansz\Desktop\beans\programming_stuff\computer-graphics\Debug\Graphics.exe
