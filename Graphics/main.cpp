@@ -12,9 +12,9 @@
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
 Shader Shaders[2];
-GLuint VAO[2];
-GLuint VBO[2];
-GLuint EBO[2];
+VAO _VAO[2];
+VBO _VBO[2];
+EBO _EBO[2];
 
 static const char* pVS = "                                                   \n\
 #version 330                                                                 \n\
@@ -83,16 +83,16 @@ GLuint indices[] =
 		0, 1, 2
 };
 
-// VBO Functions - click on + to expand
-#pragma region VBO_FUNCTIONS
-void generateObjectBuffer(GLuint& VBO, GLfloat vertices[], GLfloat colors[])
+// _VBO Functions - click on + to expand
+#pragma region _VBO_FUNCTIONS
+void generateObjectBuffer(GLuint& _VBO, GLfloat vertices[], GLfloat colors[])
 {
 	GLuint numVertices = 3;
-	// Genderate 1 generic buffer object, called VBO
-	glGenBuffers(1, &VBO);
+	// Genderate 1 generic buffer object, called _VBO
+	glGenBuffers(1, &_VBO);
 	// In OpenGL, we bind (make active) the handle to a target name and then execute commands on that target
 	// Buffer will contain an array of vertices 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, _VBO);
 	// After binding, we now fill our object with data, everything in "Vertices" goes to the GPU
 	glBufferData(GL_ARRAY_BUFFER, numVertices * 7 * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
 	// If you have more data besides vertices (e.g., vertex colours or normals), use glBufferSubData to tell the buffer when the vertices array ends and when the colors start
@@ -100,14 +100,14 @@ void generateObjectBuffer(GLuint& VBO, GLfloat vertices[], GLfloat colors[])
 	glBufferSubData(GL_ARRAY_BUFFER, numVertices * 3 * sizeof(GLfloat), numVertices * 4 * sizeof(GLfloat), colors);
 }
 
-void linkCurrentBuffertoShader(GLuint& VAO, GLuint& VBO, GLuint shaderProgramID)
+void linkCurrentBuffertoShader(GLuint& _VAO, GLuint& _VBO, GLuint shaderProgramID)
 {
 	GLuint numVertices = 3;
 	// Find the location of the variables that we will be using in the shader program
 	GLuint positionID = glGetAttribLocation(shaderProgramID, "vPosition");
 	GLuint colorID = glGetAttribLocation(shaderProgramID, "vColor");
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBindVertexArray(_VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, _VBO);
 	// Have to enable this
 	glEnableVertexAttribArray(positionID);
 	// Tell it where to find the position data in the currently active buffer (at index positionID)
@@ -116,7 +116,7 @@ void linkCurrentBuffertoShader(GLuint& VAO, GLuint& VBO, GLuint shaderProgramID)
 	glEnableVertexAttribArray(colorID);
 	glVertexAttribPointer(colorID, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(numVertices * 3 * sizeof(GLfloat)));
 }
-#pragma endregion VBO_FUNCTIONS
+#pragma endregion _VBO_FUNCTIONS
 
 
 void display()
@@ -125,11 +125,11 @@ void display()
 	// NB: Make the call to draw the geometry in the currently activated vertex buffer. This is where the GPU starts to work!
 	// Need to call shader here
 	Shaders[0].Activate();
-	glBindVertexArray(VAO[0]);
+	glBindVertexArray(_VAO[0].ID);
 	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
 	Shaders[1].Activate();
-	glBindVertexArray(VAO[1]);
+	glBindVertexArray(_VAO[1].ID);
 	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
 	glutSwapBuffers();
@@ -139,21 +139,34 @@ void display()
 void init()
 {
 
-	// Allocate memory to vertex object arrays and index buffers
-	glGenVertexArrays(2, VAO);
-	glGenBuffers(2, EBO);
 	for (int i = 0; i < 2; i++)
 	{
 		// Set up the shaders
 		Shaders[i].CompileVF(pVS, pFS[i]);
-		// Put the vertices and colors into a vertex buffer object
-		generateObjectBuffer(VBO[i], (float*)vertices[i], (float*)colors);
-		// Link the current buffer to the shader
-		linkCurrentBuffertoShader(VAO[i], VBO[i], Shaders[i].ID);
-		// Link the current index buffer to the vertex array object
-		glBindVertexArray(VAO[i]);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[i]);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+		_VAO[i].Init();
+		_VAO[i].Bind();
+
+		_VBO[i] = VBO(3 * 7 * sizeof(float));
+		_VBO[i].AddSubData(3 * 3 * sizeof(GLfloat), (float*)vertices[i]);
+		std::cout << _VBO[i].current_offset;
+		_VBO[i].AddSubData(3 * 4 * sizeof(GLfloat), (float*)colors);
+		std::cout << _VBO[i].current_offset;
+		_EBO[i] = EBO(indices, sizeof(indices));
+		
+		GLuint positionID = glGetAttribLocation(Shaders[i].ID, "vPosition");
+		GLuint colorID = glGetAttribLocation(Shaders[i].ID, "vColor");
+
+		std::cout << _VAO[i].ID;
+		std::cout << _VBO[i].ID;
+		std::cout << _EBO[i].ID;
+
+		_VAO[i].LinkAttrib(_VBO[i], positionID, 3, GL_FLOAT, 0, 0);
+		_VAO[i].LinkAttrib(_VBO[i], colorID, 4, GL_FLOAT, 0, BUFFER_OFFSET(3 * 3 * sizeof(GLfloat)));
+
+		_VAO[i].Unbind();
+		_VBO[i].Unbind();
+		_EBO[i].Unbind();
+
 	}
 }
 
