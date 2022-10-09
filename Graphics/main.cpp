@@ -15,43 +15,31 @@ Shader Shaders[2];
 VAO _VAO[2];
 VBO _VBO[2];
 EBO _EBO[2];
+int pointCount[2] = { 3, 3 };
 
-static const char* pVS = "                                                   \n\
-#version 330                                                                 \n\
-                                                                             \n\
-in vec3 vPosition;															 \n\
-in vec4 vColor;																 \n\
-																			 \n\
-out vec4 color;																 \n\
-                                                                             \n\
-void main()                                                                  \n\
-{                                                                            \n\
-	gl_Position = vec4(vPosition.x, vPosition.y, vPosition.z, 1.0);			 \n\
-	color = vColor;							                                 \n\
-}";
+char* readShaderSource(const char* shaderFile) {
+	FILE* fp;
+	fopen_s(&fp, shaderFile, "rb");
+
+	if (fp == NULL) { return NULL; }
+
+	fseek(fp, 0L, SEEK_END);
+	long size = ftell(fp);
+
+	fseek(fp, 0L, SEEK_SET);
+	char* buf = new char[size + 1];
+	fread(buf, 1, size, fp);
+	buf[size] = '\0';
+
+	fclose(fp);
+
+	return buf;
+}
+
+static const char* pVS = readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/default.vert");
 
 // Fragment Shaders
-static const char* pFS[] = { "                                               \n\
-#version 330                                                                 \n\
-																			 \n\
-in vec4 color;                                                               \n\
-out vec4 FragColor;                                                          \n\
-                                                                             \n\
-void main()                                                                  \n\
-{                                                                            \n\
-FragColor = color;									                         \n\
-}",
-"																			 \n\
-#version 330                                                                 \n\
-																			 \n\
-in vec4 color;                                                               \n\
-out vec4 FragColor;                                                          \n\
-                                                                             \n\
-void main()                                                                  \n\
-{                                                                            \n\
-FragColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);									 \n\
-}"
-};
+static const char* pFS[] = { readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/default.frag"), readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/flat_color.frag") };
 
 // Create 2 sets of 3 vertices to make up 2 triangles that fits on the viewport
 glm::vec3 vertices[][3] =
@@ -83,42 +71,6 @@ GLuint indices[] =
 		0, 1, 2
 };
 
-// _VBO Functions - click on + to expand
-#pragma region _VBO_FUNCTIONS
-void generateObjectBuffer(GLuint& _VBO, GLfloat vertices[], GLfloat colors[])
-{
-	GLuint numVertices = 3;
-	// Genderate 1 generic buffer object, called _VBO
-	glGenBuffers(1, &_VBO);
-	// In OpenGL, we bind (make active) the handle to a target name and then execute commands on that target
-	// Buffer will contain an array of vertices 
-	glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-	// After binding, we now fill our object with data, everything in "Vertices" goes to the GPU
-	glBufferData(GL_ARRAY_BUFFER, numVertices * 7 * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
-	// If you have more data besides vertices (e.g., vertex colours or normals), use glBufferSubData to tell the buffer when the vertices array ends and when the colors start
-	glBufferSubData(GL_ARRAY_BUFFER, 0, numVertices * 3 * sizeof(GLfloat), vertices);
-	glBufferSubData(GL_ARRAY_BUFFER, numVertices * 3 * sizeof(GLfloat), numVertices * 4 * sizeof(GLfloat), colors);
-}
-
-void linkCurrentBuffertoShader(GLuint& _VAO, GLuint& _VBO, GLuint shaderProgramID)
-{
-	GLuint numVertices = 3;
-	// Find the location of the variables that we will be using in the shader program
-	GLuint positionID = glGetAttribLocation(shaderProgramID, "vPosition");
-	GLuint colorID = glGetAttribLocation(shaderProgramID, "vColor");
-	glBindVertexArray(_VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-	// Have to enable this
-	glEnableVertexAttribArray(positionID);
-	// Tell it where to find the position data in the currently active buffer (at index positionID)
-	glVertexAttribPointer(positionID, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	// Similarly, for the color data.
-	glEnableVertexAttribArray(colorID);
-	glVertexAttribPointer(colorID, 4, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(numVertices * 3 * sizeof(GLfloat)));
-}
-#pragma endregion _VBO_FUNCTIONS
-
-
 void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -146,10 +98,10 @@ void init()
 		_VAO[i].Init();
 		_VAO[i].Bind();
 
-		_VBO[i] = VBO(3 * 7 * sizeof(float));
-		_VBO[i].AddSubData(3 * 3 * sizeof(GLfloat), (float*)vertices[i]);
+		_VBO[i] = VBO(pointCount[i] * 7 * sizeof(float));
+		_VBO[i].AddSubData(pointCount[i] * 3 * sizeof(GLfloat), (float*)vertices[i]);
 		std::cout << _VBO[i].current_offset;
-		_VBO[i].AddSubData(3 * 4 * sizeof(GLfloat), (float*)colors);
+		_VBO[i].AddSubData(pointCount[i] * 4 * sizeof(GLfloat), (float*)colors);
 		std::cout << _VBO[i].current_offset;
 		_EBO[i] = EBO(indices, sizeof(indices));
 		
@@ -161,12 +113,11 @@ void init()
 		std::cout << _EBO[i].ID;
 
 		_VAO[i].LinkAttrib(_VBO[i], positionID, 3, GL_FLOAT, 0, 0);
-		_VAO[i].LinkAttrib(_VBO[i], colorID, 4, GL_FLOAT, 0, BUFFER_OFFSET(3 * 3 * sizeof(GLfloat)));
+		_VAO[i].LinkAttrib(_VBO[i], colorID, 4, GL_FLOAT, 0, BUFFER_OFFSET(pointCount[i] * 3 * sizeof(GLfloat)));
 
 		_VAO[i].Unbind();
 		_VBO[i].Unbind();
 		_EBO[i].Unbind();
-
 	}
 }
 
