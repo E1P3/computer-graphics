@@ -4,7 +4,7 @@ Shader::Shader() {
 	ID = 0;
 }
 
-void Shader::getID() {
+void Shader::Init() {
 	ID = glCreateProgram();
 	if (ID == 0)
 	{
@@ -43,7 +43,7 @@ void Shader::CompileVF(const char* PVS, const char* PFS) {
 		throw std::exception("SHADER_LINKING_ERROR: Shader data is empty");
 	}
 
-	this->getID();
+	this->Init();
 
 	this->AddShader(PVS, GL_VERTEX_SHADER);
 	this->AddShader(PFS, GL_FRAGMENT_SHADER);

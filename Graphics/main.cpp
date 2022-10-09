@@ -28,7 +28,9 @@ MESH TO LOAD
 ----------------------------------------------------------------------------*/
 // this mesh is a dae file format but you should be able to use any other format too, obj is typically what is used
 // put the mesh in your project directory, or provide a filepath for it here
-#define MESH_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
+//#define MESH_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
+#define MESH_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ak.obj"
+
 /*----------------------------------------------------------------------------
 ----------------------------------------------------------------------------*/
 
@@ -49,12 +51,14 @@ Shader mesh_shader;
 bool isRotating = TRUE;
 
 ModelData mesh_data;
-int width = 800;
-int height = 600;
+int width = 1920;
+int height = 1080;
 
 GLuint loc1, loc2, loc3;
 GLfloat rotate_y = 0.0f;
-
+GLfloat meshx = 0.0f;
+GLfloat meshy = 0.0f;
+GLfloat meshz = -100.0f;
 
 #pragma region MESH LOADING
 /*----------------------------------------------------------------------------
@@ -71,7 +75,7 @@ ModelData load_mesh(const char* file_name) {
 	/* they're in the right position.                                 */
 	const aiScene* scene = aiImportFile(
 		file_name,
-		aiProcess_Triangulate | aiProcess_PreTransformVertices
+		aiProcess_Triangulate
 	);
 
 	if (!scene) {
@@ -137,7 +141,6 @@ char* readShaderSource(const char* shaderFile) {
 }
 
 void display() {
-
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glEnable(GL_DEPTH_TEST); // enable depth-testing
 	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
@@ -145,19 +148,17 @@ void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(mesh_shader.ID);
 
-
 	//Declare your uniform variables that will be used in your shader
 	int matrix_location = glGetUniformLocation(mesh_shader.ID, "model");
 	int view_mat_location = glGetUniformLocation(mesh_shader.ID, "view");
 	int proj_mat_location = glGetUniformLocation(mesh_shader.ID, "proj");
 
-
 	// Root of the Hierarchy
 	mat4 view = identity_mat4();
-	mat4 persp_proj = perspective(45.0f, (float)width / (float)height, 0.1f, 1000.0f);
+	mat4 persp_proj = perspective(90.0f, (float)width / (float)height, 0.1f, 1000.0f);
 	mat4 model = identity_mat4();
-	model = rotate_z_deg(model, rotate_y);
-	view = translate(view, vec3(0.0, 0.0, -10.0f));
+	model = rotate_x_deg(model, rotate_y);
+	view = translate(view, vec3(meshx, meshy, meshz));
 
 	// update uniforms & draw
 	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, persp_proj.m);
@@ -167,9 +168,9 @@ void display() {
 
 	// Set up the child matrix
 	mat4 modelChild = identity_mat4();
-	modelChild = rotate_z_deg(modelChild, 180);
-	modelChild = rotate_y_deg(modelChild, rotate_y);
-	modelChild = translate(modelChild, vec3(0.0f, 1.9f, 0.0f));
+	//modelChild = rotate_z_deg(modelChild, 180);
+	//modelChild = rotate_y_deg(modelChild, rotate_y);
+	//modelChild = translate(modelChild, vec3(0.0f, 1.9f, 0.0f));
 
 	// Apply the root matrix to the child matrix
 	modelChild = model * modelChild;
@@ -183,7 +184,6 @@ void display() {
 
 
 void updateScene() {
-
 	static DWORD last_time = 0;
 	DWORD curr_time = timeGetTime();
 	if (last_time == 0)
@@ -191,54 +191,72 @@ void updateScene() {
 	float delta = (curr_time - last_time) * 0.001f;
 	last_time = curr_time;
 
-	// Rotate the model slowly around the y axis at 20 degrees per second
-	rotate_y += 20.0f * delta;
-	rotate_y = fmodf(rotate_y, 360.0f);
+	if (isRotating) {
+		// Rotate the model slowly around the y axis at 20 degrees per second
+		rotate_y += 20.0f * delta;
+		rotate_y = fmodf(rotate_y, 360.0f);
+	}
 
 	// Draw the next frame
 	glutPostRedisplay();
 }
 
 void LoadObject(Shader& _shader, ModelData _mesh_data, const char* _PVS, const char* _PFS) {
-
-	_shader.CompileVF(_PVS, _PFS);
-
-	VBO mesh_vbo_v = VBO(mesh_data.mPointCount * sizeof(vec3), &mesh_data.mVertices[0]);
-	VBO mesh_vbo_f = VBO(mesh_data.mPointCount * sizeof(vec3), &mesh_data.mNormals[0]);
+	_shader.Init();
+	_shader.AddShader(_PVS, GL_VERTEX_SHADER);
+	_shader.AddShader(_PFS, GL_FRAGMENT_SHADER);
+	_shader.CompileAll();
 
 	loc1 = glGetAttribLocation(mesh_shader.ID, "vertex_position");
 	loc2 = glGetAttribLocation(mesh_shader.ID, "vertex_normal");
 	loc3 = glGetAttribLocation(mesh_shader.ID, "vertex_texture");
 
+	VBO mesh_vbo_v = VBO(mesh_data.mPointCount * sizeof(vec3), &mesh_data.mVertices[0]);
+	VBO mesh_vbo_f = VBO(mesh_data.mPointCount * sizeof(vec3), &mesh_data.mNormals[0]);
 	VAO mesh_vao;
-	mesh_vao.Init();
 
+	mesh_vao.Init();
 	mesh_vao.LinkAttrib(mesh_vbo_v, loc1, 3, GL_FLOAT, 0, 0);
 	mesh_vao.LinkAttrib(mesh_vbo_f, loc2, 3, GL_FLOAT, 0, 0);
-
 }
 
 void init()
 {
-
 	mesh_data = load_mesh(MESH_NAME);
-
 	const char* PVS = readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleVertexShader.vert");
 	const char* PFS = readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleFragmentShader.frag");
-
 	LoadObject(mesh_shader, mesh_data, PVS, PFS);
-
 }
 
 // Placeholder code for the keypress
 void keypress(unsigned char key, int x, int y) {
-	if (key == 'x') {
-		isRotating = !isRotating;
+
+	switch (key)
+	{
+		case 'x':
+			isRotating = !isRotating;
+			break;
+		case 'w':
+			meshz++;
+			break;
+		case 's':
+			meshz--;
+			break;
+		case 'a':
+			meshx--;
+			break;
+		case 'd':
+			meshx++;
+			break;
+		case 'r':
+			meshx = 0;
+			meshy = 0;
+		default:
+			break;
 	}
 }
 
 int main(int argc, char** argv) {
-
 	// Set up the window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);

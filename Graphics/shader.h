@@ -18,7 +18,7 @@ public:
 	void AddShader(const char* shaderText, GLenum shaderType);
 	void CompileAll();
 	void CompileVF(const char* PVS, const char* PFS);
-	void getID();
+	void Init();
 	// Activates the Shader Program
 	void Activate();
 	// Deletes the Shader Program
