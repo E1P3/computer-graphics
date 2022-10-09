@@ -1,12 +1,23 @@
 #include <glm/glm.hpp>
-#include <GL/glew.h>
-#include <GL/freeglut.h>
 #include <iostream>
-#include "shader.h"
+#include <math.h>
+#include <vector>
+
+//Shader functions
 #include"VAO.h"
 #include"VBO.h"
 #include"EBO.h"
+#include "shader.h"
+#include "maths_funcs.h"
 
+//OpenGl
+#include <GL/glew.h>
+#include <GL/freeglut.h>
+
+//Assimp
+#include <assimp/cimport.h> // scene importer
+#include <assimp/scene.h> // collects data
+#include <assimp/postprocess.h> // various extra operations
 
 // Macro for indexing vertex buffer
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
@@ -17,11 +28,24 @@ VBO _VBO[2];
 EBO _EBO[2];
 int pointCount[2] = { 3, 3 };
 
+typedef struct ModelData
+{
+	size_t mPointCount = 0;
+	std::vector<vec3> mVertices;
+	std::vector<vec3> mNormals;
+	std::vector<vec2> mTextureCoords;
+} ModelData;
+
 char* readShaderSource(const char* shaderFile) {
+
+	std::cout << "Reading Shader file " << shaderFile << "...\n";
 	FILE* fp;
 	fopen_s(&fp, shaderFile, "rb");
 
-	if (fp == NULL) { return NULL; }
+	if (fp == NULL) {
+		std::cout << "Shader file not found\n";
+		return NULL;
+	}
 
 	fseek(fp, 0L, SEEK_END);
 	long size = ftell(fp);
@@ -32,14 +56,14 @@ char* readShaderSource(const char* shaderFile) {
 	buf[size] = '\0';
 
 	fclose(fp);
-
+	std::cout << "Shader file loaded \n";
 	return buf;
 }
 
-static const char* pVS = readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/default.vert");
+static const char* pVS = readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/default.vert");
 
 // Fragment Shaders
-static const char* pFS[] = { readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/default.frag"), readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/flat_color.frag") };
+static const char* pFS[] = { readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/default.frag"), readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/flat_color.frag") };
 
 // Create 2 sets of 3 vertices to make up 2 triangles that fits on the viewport
 glm::vec3 vertices[][3] =
@@ -76,49 +100,59 @@ void display()
 	glClear(GL_COLOR_BUFFER_BIT);
 	// NB: Make the call to draw the geometry in the currently activated vertex buffer. This is where the GPU starts to work!
 	// Need to call shader here
-	Shaders[0].Activate();
-	glBindVertexArray(_VAO[0].ID);
-	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+	for (int i = 0; i < 2; i++) {
 
-	Shaders[1].Activate();
-	glBindVertexArray(_VAO[1].ID);
-	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+		std::cout << "Using properties \n";
+		std::cout << "Shader: " << Shaders[i].ID << "\n";
+		std::cout << "VAO: " << _VAO[i].ID << "\n";
+
+		Shaders[i].Activate();
+		glBindVertexArray(_VAO[i].ID);
+		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+	}
 
 	glutSwapBuffers();
 }
 
 
+void LoadObject(VAO& _VAO, VBO& _VBO, EBO& _EBO, Shader& _Shader, const char* PVS, const char* PFS, float* _vertices, float* _colors, GLuint indicies[], int _pointCount) {
+
+	std::cout << "Loading Object\n";
+
+	_Shader.CompileVF(PVS, PFS);
+	_VAO.Init();
+	_VAO.Bind();
+
+	_VBO = VBO(_pointCount * 7 * sizeof(float));
+	_VBO.AddSubData(_pointCount * 3 * sizeof(GLfloat), _vertices);
+	_VBO.AddSubData(_pointCount * 4 * sizeof(GLfloat), _colors);
+	_EBO = EBO(indices, sizeof(indices));
+
+	GLuint positionID = glGetAttribLocation(_Shader.ID, "vPosition");
+	GLuint colorID = glGetAttribLocation(_Shader.ID, "vColor");
+
+	_VAO.LinkAttrib(_VBO, positionID, 3, GL_FLOAT, 0, 0);
+	_VAO.LinkAttrib(_VBO, colorID, 4, GL_FLOAT, 0, BUFFER_OFFSET(_pointCount * 3 * sizeof(GLfloat)));
+
+	_VAO.Unbind();
+	_VBO.Unbind();
+	_EBO.Unbind();
+
+	std::cout << "Object Loaded \n";
+	std::cout << "VAO: " << _VAO.ID << "\n";
+	std::cout << "VBO: " << _VBO.ID << "\n";
+	std::cout << "EBO: " << _EBO.ID << "\n";
+	std::cout << "Shader: " << _Shader.ID << "\n";
+
+}
+
 void init()
 {
 
-	for (int i = 0; i < 2; i++)
-	{
-		// Set up the shaders
-		Shaders[i].CompileVF(pVS, pFS[i]);
-		_VAO[i].Init();
-		_VAO[i].Bind();
-
-		_VBO[i] = VBO(pointCount[i] * 7 * sizeof(float));
-		_VBO[i].AddSubData(pointCount[i] * 3 * sizeof(GLfloat), (float*)vertices[i]);
-		std::cout << _VBO[i].current_offset;
-		_VBO[i].AddSubData(pointCount[i] * 4 * sizeof(GLfloat), (float*)colors);
-		std::cout << _VBO[i].current_offset;
-		_EBO[i] = EBO(indices, sizeof(indices));
-		
-		GLuint positionID = glGetAttribLocation(Shaders[i].ID, "vPosition");
-		GLuint colorID = glGetAttribLocation(Shaders[i].ID, "vColor");
-
-		std::cout << _VAO[i].ID;
-		std::cout << _VBO[i].ID;
-		std::cout << _EBO[i].ID;
-
-		_VAO[i].LinkAttrib(_VBO[i], positionID, 3, GL_FLOAT, 0, 0);
-		_VAO[i].LinkAttrib(_VBO[i], colorID, 4, GL_FLOAT, 0, BUFFER_OFFSET(pointCount[i] * 3 * sizeof(GLfloat)));
-
-		_VAO[i].Unbind();
-		_VBO[i].Unbind();
-		_EBO[i].Unbind();
+	for (int i = 0; i < 2; i++) {
+		LoadObject(_VAO[i], _VBO[i], _EBO[i], Shaders[i], pVS, pFS[i], (float*)vertices[i], (float*)colors, indices, pointCount[i]);
 	}
+
 }
 
 int main(int argc, char** argv)

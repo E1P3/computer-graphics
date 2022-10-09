@@ -39,6 +39,10 @@ void Shader::CompileAll() {
 
 void Shader::CompileVF(const char* PVS, const char* PFS) {
 
+	if (!PVS || !PFS) {
+		throw std::exception("SHADER_LINKING_ERROR: Shader data is empty");
+	}
+
 	this->getID();
 
 	this->AddShader(PVS, GL_VERTEX_SHADER);
