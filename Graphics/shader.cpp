@@ -51,24 +51,7 @@ void Shader::CompileVF(const char* PVS, const char* PFS) {
 	GLint Success = 0;
 	GLchar ErrorLog[1024] = { 0 };
 
-	// After compiling all shader objects and attaching them to the program, we can finally link it
-	glLinkProgram(ID);
-	glGetProgramiv(ID, GL_LINK_STATUS, &Success);
-	if (Success == 0)
-	{
-		glGetProgramInfoLog(ID, sizeof(ErrorLog), NULL, ErrorLog);
-		fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
-		exit(1);
-	}
-
-	glValidateProgram(ID);
-	glGetProgramiv(ID, GL_LINK_STATUS, &Success);
-	if (Success == 0)
-	{
-		glGetProgramInfoLog(ID, sizeof(ErrorLog), NULL, ErrorLog);
-		fprintf(stderr, "Error linking shader program: '%s'\n", ErrorLog);
-		exit(1);
-	}
+	this->CompileAll();
 
 	this->Activate();
 

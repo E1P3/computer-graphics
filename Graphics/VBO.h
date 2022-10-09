@@ -11,10 +11,11 @@ public:
 	GLuint ID;
 	int current_offset;
 	// Constructor that generates a Vertex Buffer Object and links it to vertices
-	VBO(GLsizeiptr size);
 	VBO();
+	VBO(GLsizeiptr size);
+	VBO(GLsizeiptr size, const void* data);
 
-	void AddSubData(int size, GLfloat data[]);
+	void AddSubData(int size, const void* data);
 	// Binds the VBO
 	void Bind();
 	// Unbinds the VBO

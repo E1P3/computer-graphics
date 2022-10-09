@@ -1,33 +1,38 @@
-#include <glm/glm.hpp>
+// Windows includes (For Time, IO, etc.)
+#include <windows.h>
+#include <mmsystem.h>
 #include <iostream>
+#include <string>
+#include <stdio.h>
 #include <math.h>
-#include <vector>
+#include <vector> // STL dynamic memory.
 
-//Shader functions
-#include"VAO.h"
-#include"VBO.h"
-#include"EBO.h"
-#include "shader.h"
-#include "maths_funcs.h"
-
-//OpenGl
+// OpenGL includes
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
-//Assimp
+// Assimp includes
 #include <assimp/cimport.h> // scene importer
 #include <assimp/scene.h> // collects data
 #include <assimp/postprocess.h> // various extra operations
 
-// Macro for indexing vertex buffer
-#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+// Project includes
+#include "maths_funcs.h"
+#include "shader.h"
+#include "VAO.h"
+#include "VBO.h"
 
-Shader Shaders[2];
-VAO _VAO[2];
-VBO _VBO[2];
-EBO _EBO[2];
-int pointCount[2] = { 3, 3 };
 
+/*----------------------------------------------------------------------------
+MESH TO LOAD
+----------------------------------------------------------------------------*/
+// this mesh is a dae file format but you should be able to use any other format too, obj is typically what is used
+// put the mesh in your project directory, or provide a filepath for it here
+#define MESH_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
+/*----------------------------------------------------------------------------
+----------------------------------------------------------------------------*/
+
+#pragma region SimpleTypes
 typedef struct ModelData
 {
 	size_t mPointCount = 0;
@@ -35,17 +40,88 @@ typedef struct ModelData
 	std::vector<vec3> mNormals;
 	std::vector<vec2> mTextureCoords;
 } ModelData;
+#pragma endregion SimpleTypes
 
+using namespace std;
+GLuint shaderProgramID;
+Shader mesh_shader;
+
+bool isRotating = TRUE;
+
+ModelData mesh_data;
+int width = 800;
+int height = 600;
+
+GLuint loc1, loc2, loc3;
+GLfloat rotate_y = 0.0f;
+
+
+#pragma region MESH LOADING
+/*----------------------------------------------------------------------------
+MESH LOADING FUNCTION
+----------------------------------------------------------------------------*/
+
+ModelData load_mesh(const char* file_name) {
+	ModelData modelData;
+
+	/* Use assimp to read the model file, forcing it to be read as    */
+	/* triangles. The second flag (aiProcess_PreTransformVertices) is */
+	/* relevant if there are multiple meshes in the model file that   */
+	/* are offset from the origin. This is pre-transform them so      */
+	/* they're in the right position.                                 */
+	const aiScene* scene = aiImportFile(
+		file_name,
+		aiProcess_Triangulate | aiProcess_PreTransformVertices
+	);
+
+	if (!scene) {
+		fprintf(stderr, "ERROR: reading mesh %s\n", file_name);
+		return modelData;
+	}
+
+	printf("  %i materials\n", scene->mNumMaterials);
+	printf("  %i meshes\n", scene->mNumMeshes);
+	printf("  %i textures\n", scene->mNumTextures);
+
+	for (unsigned int m_i = 0; m_i < scene->mNumMeshes; m_i++) {
+		const aiMesh* mesh = scene->mMeshes[m_i];
+		printf("    %i vertices in mesh\n", mesh->mNumVertices);
+		modelData.mPointCount += mesh->mNumVertices;
+		for (unsigned int v_i = 0; v_i < mesh->mNumVertices; v_i++) {
+			if (mesh->HasPositions()) {
+				const aiVector3D* vp = &(mesh->mVertices[v_i]);
+				modelData.mVertices.push_back(vec3(vp->x, vp->y, vp->z));
+			}
+			if (mesh->HasNormals()) {
+				const aiVector3D* vn = &(mesh->mNormals[v_i]);
+				modelData.mNormals.push_back(vec3(vn->x, vn->y, vn->z));
+			}
+			if (mesh->HasTextureCoords(0)) {
+				const aiVector3D* vt = &(mesh->mTextureCoords[0][v_i]);
+				modelData.mTextureCoords.push_back(vec2(vt->x, vt->y));
+			}
+			if (mesh->HasTangentsAndBitangents()) {
+				/* You can extract tangents and bitangents here              */
+				/* Note that you might need to make Assimp generate this     */
+				/* data for you. Take a look at the flags that aiImportFile  */
+				/* can take.                                                 */
+			}
+		}
+	}
+
+	aiReleaseImport(scene);
+	return modelData;
+}
+
+#pragma endregion MESH LOADING
+
+// Shader Functions- click on + to expand
+#pragma region SHADER_FUNCTIONS
 char* readShaderSource(const char* shaderFile) {
-
-	std::cout << "Reading Shader file " << shaderFile << "...\n";
 	FILE* fp;
 	fopen_s(&fp, shaderFile, "rb");
 
-	if (fp == NULL) {
-		std::cout << "Shader file not found\n";
-		return NULL;
-	}
+	if (fp == NULL) { return NULL; }
 
 	fseek(fp, 0L, SEEK_END);
 	long size = ftell(fp);
@@ -56,114 +132,123 @@ char* readShaderSource(const char* shaderFile) {
 	buf[size] = '\0';
 
 	fclose(fp);
-	std::cout << "Shader file loaded \n";
+
 	return buf;
 }
 
-static const char* pVS = readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/default.vert");
+void display() {
 
-// Fragment Shaders
-static const char* pFS[] = { readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/default.frag"), readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/flat_color.frag") };
+	// tell GL to only draw onto a pixel if the shape is closer to the viewer
+	glEnable(GL_DEPTH_TEST); // enable depth-testing
+	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
+	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(mesh_shader.ID);
 
-// Create 2 sets of 3 vertices to make up 2 triangles that fits on the viewport
-glm::vec3 vertices[][3] =
-{
-	{
-		glm::vec3(-0.5f,  0.5f, 0.0f),
-		glm::vec3(0.5f, -0.5f, 0.0f),
-		glm::vec3(-0.5f, -0.5f, 0.0f)
-	},
-	{
-		glm::vec3(-0.5f,  0.5f, 0.0f),
-		glm::vec3(0.5f, -0.5f, 0.0f),
-		glm::vec3(0.5f,  0.5f, 0.0f)
-	}
-};
 
-// Create a color array that identfies the colors of each vertex (format R, G, B, A)
-// Note: The color array will be ignored by the fragment shader for the second triangle
-glm::vec4 colors[] =
-{
-		glm::vec4(1.0f, 0.0f, 0.0f, 1.0f),
-		glm::vec4(0.0f, 1.0f, 0.0f, 1.0f),
-		glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)
-};
+	//Declare your uniform variables that will be used in your shader
+	int matrix_location = glGetUniformLocation(mesh_shader.ID, "model");
+	int view_mat_location = glGetUniformLocation(mesh_shader.ID, "view");
+	int proj_mat_location = glGetUniformLocation(mesh_shader.ID, "proj");
 
-// Create an index buffer for the 2 triangles
-GLuint indices[] =
-{
-		0, 1, 2
-};
 
-void display()
-{
-	glClear(GL_COLOR_BUFFER_BIT);
-	// NB: Make the call to draw the geometry in the currently activated vertex buffer. This is where the GPU starts to work!
-	// Need to call shader here
-	for (int i = 0; i < 2; i++) {
+	// Root of the Hierarchy
+	mat4 view = identity_mat4();
+	mat4 persp_proj = perspective(45.0f, (float)width / (float)height, 0.1f, 1000.0f);
+	mat4 model = identity_mat4();
+	model = rotate_z_deg(model, rotate_y);
+	view = translate(view, vec3(0.0, 0.0, -10.0f));
 
-		std::cout << "Using properties \n";
-		std::cout << "Shader: " << Shaders[i].ID << "\n";
-		std::cout << "VAO: " << _VAO[i].ID << "\n";
+	// update uniforms & draw
+	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, persp_proj.m);
+	glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, view.m);
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, model.m);
+	glDrawArrays(GL_TRIANGLES, 0, mesh_data.mPointCount);
 
-		Shaders[i].Activate();
-		glBindVertexArray(_VAO[i].ID);
-		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-	}
+	// Set up the child matrix
+	mat4 modelChild = identity_mat4();
+	modelChild = rotate_z_deg(modelChild, 180);
+	modelChild = rotate_y_deg(modelChild, rotate_y);
+	modelChild = translate(modelChild, vec3(0.0f, 1.9f, 0.0f));
+
+	// Apply the root matrix to the child matrix
+	modelChild = model * modelChild;
+
+	// Update the appropriate uniform and draw the mesh again
+	glUniformMatrix4fv(matrix_location, 1, GL_FALSE, modelChild.m);
+	glDrawArrays(GL_TRIANGLES, 0, mesh_data.mPointCount);
 
 	glutSwapBuffers();
 }
 
 
-void LoadObject(VAO& _VAO, VBO& _VBO, EBO& _EBO, Shader& _Shader, const char* PVS, const char* PFS, float* _vertices, float* _colors, GLuint indicies[], int _pointCount) {
+void updateScene() {
 
-	std::cout << "Loading Object\n";
+	static DWORD last_time = 0;
+	DWORD curr_time = timeGetTime();
+	if (last_time == 0)
+		last_time = curr_time;
+	float delta = (curr_time - last_time) * 0.001f;
+	last_time = curr_time;
 
-	_Shader.CompileVF(PVS, PFS);
-	_VAO.Init();
-	_VAO.Bind();
+	// Rotate the model slowly around the y axis at 20 degrees per second
+	rotate_y += 20.0f * delta;
+	rotate_y = fmodf(rotate_y, 360.0f);
 
-	_VBO = VBO(_pointCount * 7 * sizeof(float));
-	_VBO.AddSubData(_pointCount * 3 * sizeof(GLfloat), _vertices);
-	_VBO.AddSubData(_pointCount * 4 * sizeof(GLfloat), _colors);
-	_EBO = EBO(indices, sizeof(indices));
+	// Draw the next frame
+	glutPostRedisplay();
+}
 
-	GLuint positionID = glGetAttribLocation(_Shader.ID, "vPosition");
-	GLuint colorID = glGetAttribLocation(_Shader.ID, "vColor");
+void LoadObject(Shader& _shader, ModelData _mesh_data, const char* _PVS, const char* _PFS) {
 
-	_VAO.LinkAttrib(_VBO, positionID, 3, GL_FLOAT, 0, 0);
-	_VAO.LinkAttrib(_VBO, colorID, 4, GL_FLOAT, 0, BUFFER_OFFSET(_pointCount * 3 * sizeof(GLfloat)));
+	_shader.CompileVF(_PVS, _PFS);
 
-	_VAO.Unbind();
-	_VBO.Unbind();
-	_EBO.Unbind();
+	VBO mesh_vbo_v = VBO(mesh_data.mPointCount * sizeof(vec3), &mesh_data.mVertices[0]);
+	VBO mesh_vbo_f = VBO(mesh_data.mPointCount * sizeof(vec3), &mesh_data.mNormals[0]);
 
-	std::cout << "Object Loaded \n";
-	std::cout << "VAO: " << _VAO.ID << "\n";
-	std::cout << "VBO: " << _VBO.ID << "\n";
-	std::cout << "EBO: " << _EBO.ID << "\n";
-	std::cout << "Shader: " << _Shader.ID << "\n";
+	loc1 = glGetAttribLocation(mesh_shader.ID, "vertex_position");
+	loc2 = glGetAttribLocation(mesh_shader.ID, "vertex_normal");
+	loc3 = glGetAttribLocation(mesh_shader.ID, "vertex_texture");
+
+	VAO mesh_vao;
+	mesh_vao.Init();
+
+	mesh_vao.LinkAttrib(mesh_vbo_v, loc1, 3, GL_FLOAT, 0, 0);
+	mesh_vao.LinkAttrib(mesh_vbo_f, loc2, 3, GL_FLOAT, 0, 0);
 
 }
 
 void init()
 {
 
-	for (int i = 0; i < 2; i++) {
-		LoadObject(_VAO[i], _VBO[i], _EBO[i], Shaders[i], pVS, pFS[i], (float*)vertices[i], (float*)colors, indices, pointCount[i]);
-	}
+	mesh_data = load_mesh(MESH_NAME);
+
+	const char* PVS = readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleVertexShader.vert");
+	const char* PFS = readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleFragmentShader.frag");
+
+	LoadObject(mesh_shader, mesh_data, PVS, PFS);
 
 }
 
-int main(int argc, char** argv)
-{
+// Placeholder code for the keypress
+void keypress(unsigned char key, int x, int y) {
+	if (key == 'x') {
+		isRotating = !isRotating;
+	}
+}
+
+int main(int argc, char** argv) {
+
 	// Set up the window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-	glutInitWindowSize(800, 600);
-	glutCreateWindow("Lab 1");
+	glutInitWindowSize(width, height);
+	glutCreateWindow("Hello Triangle");
+
 	// Tell glut where the display function is
 	glutDisplayFunc(display);
+	glutIdleFunc(updateScene);
+	glutKeyboardFunc(keypress);
 
 	// A call to glewInit() must be done after glut is initialized!
 	GLenum res = glewInit();

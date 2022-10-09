@@ -14,7 +14,15 @@ VBO::VBO(GLsizeiptr size)
 	glBufferData(GL_ARRAY_BUFFER, size, NULL, GL_STATIC_DRAW);
 }
 
-void VBO::AddSubData(int size, GLfloat data[]) {
+VBO::VBO(GLsizeiptr size, const void* data)
+{
+	current_offset = 0;
+	glGenBuffers(1, &ID);
+	glBindBuffer(GL_ARRAY_BUFFER, ID);
+	glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+}
+
+void VBO::AddSubData(int size, const void* data) {
 	this->Bind();
 	glBufferSubData(GL_ARRAY_BUFFER, current_offset, size, data);
 	current_offset += size;
