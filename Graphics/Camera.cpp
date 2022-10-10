@@ -26,10 +26,6 @@ Camera::Camera(GLfloat x, GLfloat y, GLfloat z) {
 	key_event = FALSE;
 }
 
-bool Camera::getKeyEnable() {
-	return key_event;
-}
-
 void Camera::MouseMove(int x, int y){
 	camera_X += (x - delta_X) * speed_X;
 	camera_Y += (y - delta_Y) * speed_Y;
@@ -84,4 +80,8 @@ GLfloat Camera::getSpeedX() {
 
 GLfloat Camera::getSpeedY() {
 	return speed_Y;
+}
+
+bool Camera::getKeyEnable() {
+	return key_event;
 }
