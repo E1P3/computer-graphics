@@ -19,6 +19,7 @@
 // Project includes
 #include "maths_funcs.h"
 #include "shader.h"
+#include "Camera.h"
 #include "VAO.h"
 #include "VBO.h"
 
@@ -28,7 +29,7 @@ MESH TO LOAD
 ----------------------------------------------------------------------------*/
 // this mesh is a dae file format but you should be able to use any other format too, obj is typically what is used
 // put the mesh in your project directory, or provide a filepath for it here
-#define MESH_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
+#define MESH_NAME "C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
 //#define MESH_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ak.obj"
 
 /*----------------------------------------------------------------------------
@@ -47,8 +48,7 @@ typedef struct ModelData
 using namespace std;
 GLuint shaderProgramID;
 Shader mesh_shader;
-
-bool isRotating = FALSE;
+Camera player_camera;
 
 ModelData mesh_data;
 int width = 1920;
@@ -56,17 +56,6 @@ int height = 1080;
 
 GLuint loc1, loc2, loc3;
 GLfloat rotate_y = 0.0f;
-
-GLfloat state_X = 0.0f;
-GLfloat state_Y = 0.0f;
-GLfloat delta_X = 0.0f;
-GLfloat delta_Y = 0.0f;
-GLfloat camera_X = 0.0f;
-GLfloat camera_Y = 0.0f;
-
-GLfloat camera_x = 0.0f;
-GLfloat camera_y = 0.0f;
-GLfloat camera_z = -100.0f;
 
 #pragma region MESH LOADING
 /*----------------------------------------------------------------------------
@@ -168,11 +157,11 @@ void display() {
 	model = rotate_x_deg(model, 270.0);
 	model = rotate_y_deg(model, rotate_y);
 
-	view = rotate_y_deg(view, camera_X);
-	view = rotate_x_deg(view, camera_Y);
+	view = rotate_y_deg(view, player_camera.camera_X);
+	view = rotate_x_deg(view, player_camera.camera_Y);
 	//view = rotate_x_deg(view, );
 	//view = rotate_x_deg(view, );
-	view = translate(view, vec3(camera_x, camera_y, camera_z));
+	view = translate(view, vec3(player_camera.camera_x, player_camera.camera_y, player_camera.camera_z));
 
 	// update uniforms & draw
 	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, persp_proj.m);
@@ -205,7 +194,7 @@ void updateScene() {
 	float delta = (curr_time - last_time) * 0.001f;
 	last_time = curr_time;
 
-	if (isRotating) {
+	if (player_camera.getKeyEnable()) {
 		// Rotate the model slowly around the y axis at 20 degrees per second
 		rotate_y += 20.0f * delta;
 		rotate_y = fmodf(rotate_y, 360.0f);
@@ -237,60 +226,22 @@ void LoadObject(Shader& _shader, ModelData _mesh_data, const char* _PVS, const c
 void init()
 {
 	mesh_data = load_mesh(MESH_NAME);
-	const char* PVS = readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleVertexShader.vert");
-	const char* PFS = readShaderSource("C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleFragmentShader.frag");
+	const char* PVS = readShaderSource("C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Shaders/simpleVertexShader.vert");
+	const char* PFS = readShaderSource("C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Shaders/simpleFragmentShader.frag");
 	LoadObject(mesh_shader, mesh_data, PVS, PFS);
 }
 
-// Placeholder code for the keypress
-void keypress(unsigned char key, int x, int y) {
-
-	switch (key)
-	{
-		case 'x':
-			isRotating = !isRotating;
-			break;
-		case 'w':
-			camera_z++;
-			break;
-		case 's':
-			camera_z--;
-			break;
-		case 'a':
-			camera_x--;
-			break;
-		case 'd':
-			camera_x++;
-			break;
-		case 'r':
-			camera_x = 0;
-			camera_z = 0;
-		default:
-			break;
-	}
+void mouseButton(int button, int state, int x, int y) {
+	player_camera.MouseButton(button, state, x, y);
 }
-
-float speed = 0.5f;
 
 void mouseMove(int x, int y) {
-	camera_X += (x - delta_X)*speed;
-	camera_Y += (y - delta_Y)*speed;
-	delta_X = x;
-	delta_Y = y;
+	player_camera.MouseMove(x, y);
 }
 
-
-void mouseButton(int button, int state, int x, int y) {
-	// only start motion if the left button is pressed
-	if (button == GLUT_LEFT_BUTTON) {
-		// when the button is released
-		if (state == GLUT_DOWN) {
-			delta_X = x;
-			delta_Y = y;
-		}
-	}
+void keypress(unsigned char key, int x, int y) {
+	player_camera.keypress(key, x, y);
 }
-
 int main(int argc, char** argv) {
 	// Set up the window
 	glutInit(&argc, argv);
