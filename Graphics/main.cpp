@@ -28,8 +28,8 @@ MESH TO LOAD
 ----------------------------------------------------------------------------*/
 // this mesh is a dae file format but you should be able to use any other format too, obj is typically what is used
 // put the mesh in your project directory, or provide a filepath for it here
-//#define MESH_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
-#define MESH_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ak.obj"
+#define MESH_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
+//#define MESH_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ak.obj"
 
 /*----------------------------------------------------------------------------
 ----------------------------------------------------------------------------*/
@@ -48,7 +48,7 @@ using namespace std;
 GLuint shaderProgramID;
 Shader mesh_shader;
 
-bool isRotating = TRUE;
+bool isRotating = FALSE;
 
 ModelData mesh_data;
 int width = 1920;
@@ -56,9 +56,17 @@ int height = 1080;
 
 GLuint loc1, loc2, loc3;
 GLfloat rotate_y = 0.0f;
-GLfloat meshx = 0.0f;
-GLfloat meshy = 0.0f;
-GLfloat meshz = -100.0f;
+
+GLfloat state_X = 0.0f;
+GLfloat state_Y = 0.0f;
+GLfloat delta_X = 0.0f;
+GLfloat delta_Y = 0.0f;
+GLfloat camera_X = 0.0f;
+GLfloat camera_Y = 0.0f;
+
+GLfloat camera_x = 0.0f;
+GLfloat camera_y = 0.0f;
+GLfloat camera_z = -100.0f;
 
 #pragma region MESH LOADING
 /*----------------------------------------------------------------------------
@@ -144,7 +152,7 @@ void display() {
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glEnable(GL_DEPTH_TEST); // enable depth-testing
 	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(mesh_shader.ID);
 
@@ -155,10 +163,16 @@ void display() {
 
 	// Root of the Hierarchy
 	mat4 view = identity_mat4();
-	mat4 persp_proj = perspective(90.0f, (float)width / (float)height, 0.1f, 1000.0f);
+	mat4 persp_proj = perspective(45.0f, (float)width / (float)height, 0.1f, 1000.0f);
 	mat4 model = identity_mat4();
-	model = rotate_x_deg(model, rotate_y);
-	view = translate(view, vec3(meshx, meshy, meshz));
+	model = rotate_x_deg(model, 270.0);
+	model = rotate_y_deg(model, rotate_y);
+
+	view = rotate_y_deg(view, camera_X);
+	view = rotate_x_deg(view, camera_Y);
+	//view = rotate_x_deg(view, );
+	//view = rotate_x_deg(view, );
+	view = translate(view, vec3(camera_x, camera_y, camera_z));
 
 	// update uniforms & draw
 	glUniformMatrix4fv(proj_mat_location, 1, GL_FALSE, persp_proj.m);
@@ -237,22 +251,43 @@ void keypress(unsigned char key, int x, int y) {
 			isRotating = !isRotating;
 			break;
 		case 'w':
-			meshz++;
+			camera_z++;
 			break;
 		case 's':
-			meshz--;
+			camera_z--;
 			break;
 		case 'a':
-			meshx--;
+			camera_x--;
 			break;
 		case 'd':
-			meshx++;
+			camera_x++;
 			break;
 		case 'r':
-			meshx = 0;
-			meshy = 0;
+			camera_x = 0;
+			camera_z = 0;
 		default:
 			break;
+	}
+}
+
+float speed = 0.5f;
+
+void mouseMove(int x, int y) {
+	camera_X += (x - delta_X)*speed;
+	camera_Y += (y - delta_Y)*speed;
+	delta_X = x;
+	delta_Y = y;
+}
+
+
+void mouseButton(int button, int state, int x, int y) {
+	// only start motion if the left button is pressed
+	if (button == GLUT_LEFT_BUTTON) {
+		// when the button is released
+		if (state == GLUT_DOWN) {
+			delta_X = x;
+			delta_Y = y;
+		}
 	}
 }
 
@@ -267,6 +302,8 @@ int main(int argc, char** argv) {
 	glutDisplayFunc(display);
 	glutIdleFunc(updateScene);
 	glutKeyboardFunc(keypress);
+	glutMouseFunc(mouseButton);
+	glutMotionFunc(mouseMove);
 
 	// A call to glewInit() must be done after glut is initialized!
 	GLenum res = glewInit();
