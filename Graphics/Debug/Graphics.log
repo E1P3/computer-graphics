@@ -1,4 +1,6 @@
 ﻿  main.cpp
-C:\Users\jansz\Desktop\beans\programming_stuff\computer-graphics\Graphics\main.cpp(85,45): warning C4042: 'pVS': has bad storage class
-C:\Users\jansz\Desktop\beans\programming_stuff\computer-graphics\Graphics\main.cpp(85,69): warning C4042: 'pFS': has bad storage class
-  Graphics.vcxproj -> C:\Users\jansz\Desktop\beans\programming_stuff\computer-graphics\Debug\Graphics.exe
+C:\Users\HOW TO SPOON\Desktop\beans\code\computer-graphics\Graphics\main.cpp(129,11): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\HOW TO SPOON\Desktop\beans\code\computer-graphics\Graphics\main.cpp(130,11): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\HOW TO SPOON\Desktop\beans\code\computer-graphics\Graphics\main.cpp(137,10): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\HOW TO SPOON\Desktop\beans\code\computer-graphics\Graphics\main.cpp(138,10): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+  Graphics.vcxproj -> C:\Users\HOW TO SPOON\Desktop\beans\code\computer-graphics\Debug\Graphics.exe

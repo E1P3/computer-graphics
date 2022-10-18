@@ -1,4 +1,5 @@
 #include"VAO.h"
+#include <iostream>
 
 // Constructor that generates a VAO ID
 VAO::VAO()

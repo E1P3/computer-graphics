@@ -1,15 +1,13 @@
 #include "MeshRenderer.h"
 
-MeshRenderer::MeshRenderer() {
-	
-}
-
 MeshRenderer::MeshRenderer(const char* mesh_file_name, const char* pvs_file_name, const char* pfs_file_name){
 	ImportMeshData(mesh_file_name);
 	ImportVertexShader(pvs_file_name);
 	ImportFragmentShader(pfs_file_name);
 	Render();
 }
+
+using namespace glm;
 
 char* MeshRenderer::readShaderSource(const char* shaderFile) {
 	FILE* fp;
@@ -28,6 +26,24 @@ char* MeshRenderer::readShaderSource(const char* shaderFile) {
 	fclose(fp);
 
 	return buf;
+}
+
+void MeshRenderer::Draw(int width, int height, vec3 position, float angle, Camera* camera) {
+	this->mesh_shader.Use();
+
+	mat4 projection = perspective(90.0f, (float)width / (float)height, 0.1f, 100.0f);	// Root of the Hierarchy
+	mat4 view = mat4(1.0f);
+	view = camera->GetViewMatrix();
+	mat4 model = mat4(1.0f);
+	model = translate(model, position);
+	model = rotate(model, radians(angle), vec3(1.0f, 0.0f, 0.0f));
+	mesh_shader.SetMatrix4("proj", projection);
+	mesh_shader.SetMatrix4("view", view);
+	mesh_shader.SetMatrix4("model", model);
+	mesh_vao.Bind();
+	glDrawArrays(GL_TRIANGLES, 0, getMeshPointCount());
+	mesh_vao.Unbind();
+
 }
 
 void MeshRenderer::ImportMeshData(const char* file_name){
@@ -87,10 +103,7 @@ void MeshRenderer::ImportFragmentShader(const char* file_name){
 }
 
 void MeshRenderer::Render(){
-	mesh_shader.Init();
-	mesh_shader.AddShader(PVS, GL_VERTEX_SHADER);
-	mesh_shader.AddShader(PFS, GL_FRAGMENT_SHADER);
-	mesh_shader.CompileAll();
+	mesh_shader.Compile(PVS, PFS);
 
 	GLuint loc1 = glGetAttribLocation(mesh_shader.ID, "vertex_position");
 	GLuint loc2 = glGetAttribLocation(mesh_shader.ID, "vertex_normal");
@@ -98,11 +111,12 @@ void MeshRenderer::Render(){
 
 	VBO mesh_vbo_v = VBO(mesh_data.mPointCount * sizeof(vec3), &mesh_data.mVertices[0]);
 	VBO mesh_vbo_f = VBO(mesh_data.mPointCount * sizeof(vec3), &mesh_data.mNormals[0]);
-	VAO mesh_vao;
 
 	mesh_vao.Init();
+	mesh_vao.Bind();
 	mesh_vao.LinkAttrib(mesh_vbo_v, loc1, 3, GL_FLOAT, 0, 0);
 	mesh_vao.LinkAttrib(mesh_vbo_f, loc2, 3, GL_FLOAT, 0, 0);
+	mesh_vao.Unbind();
 }
 
 GLuint MeshRenderer::getShaderProgramID(){
