@@ -29,18 +29,27 @@ MESH TO LOAD
 // this mesh is a dae file format but you should be able to use any other format too, obj is typically what is used
 // put the mesh in your project directory, or provide a filepath for it here
 #define MESH_MONKEY "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
+#define MESH_PLANE "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/plane.dae"
 #define PVS_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleVertexShader.vert"
 #define PFS_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleFragmentShader.frag"
 #define MESH_AK "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ak.obj"
-
+#define MESH_BUILDING "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/building.dae"
+#define MESH_DUDE "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/dude.dae"
+#define MESH_CS "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/terroristo.dae"
+#define MESH_DEER "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/deer.dae"
+#define MESH_PLANE "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/plane.dae"
 /*----------------------------------------------------------------------------
 ----------------------------------------------------------------------------*/
 
 using namespace std;
-Camera player_camera;
+Camera player_camera = Camera(glm::vec3(0.0f,1.0f,1.0f));
 GameObject obj1, obj2;
 bool firstMouse = true;
 float delta = 0.0f;
+bool scalex = true;
+bool scaley = true;
+bool scalez = true;
+bool scalexyz = true;
 
 int width = 1920;
 int height = 1080;
@@ -67,15 +76,19 @@ void display() {
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glEnable(GL_DEPTH_TEST); // enable depth-testing
 	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//printf("Frame \n");
-	std::cout << "CAMERA: " << player_camera.Position.x << ", " << player_camera.Position.y << ", " << player_camera.Position.z << ", YAW: " << player_camera.Yaw << " PITCH: " << player_camera.Pitch << "\n";
+	//std::cout << "CAMERA: " << player_camera.Position.x << ", " << player_camera.Position.y << ", " << player_camera.Position.z << ", YAW: " << player_camera.Yaw << " PITCH: " << player_camera.Pitch << "\n";
 
-	obj1.Draw();
-	obj2.Draw();
+	
+	//obj1.Renderer.transform = glm::rotate(obj2.Renderer.transform, 90.0f, glm::vec3(1.f, 0.f, 1.f));
 
-	cout << "FPS: " << 1 / delta << "\n";
+	obj1.Renderer.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix());
+	obj2.Renderer.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix());
+
+
+	//cout << "FPS: " << 1 / delta << "\n";
 
 	glutSwapBuffers();
 }
@@ -95,15 +108,16 @@ void updateScene() {
 
 void init()
 {
+	player_camera.SetProjection(PERSP);
 
-	obj1 = GameObject(0.0f, 0.0f, 0.0f, width, height);
-	obj1.SetCamera(&player_camera);
-	obj1.RenderSetup(MESH_MONKEY, PVS_NAME, PFS_NAME);
+	obj1 = GameObject();
+	obj1.RenderSetup(MESH_DUDE, PVS_NAME, PFS_NAME);
 	
-	obj2 = GameObject(-100.0f, 0.0f, -100.0f, width, height);
-	obj2.SetCamera(&player_camera);
-	obj2.RenderSetup(MESH_AK, PVS_NAME, PFS_NAME);
-	
+	obj2 = GameObject();
+	obj2.RenderSetup(MESH_PLANE, PVS_NAME, PFS_NAME);
+	obj2.Renderer.Rotate(270.0f, 0.0f, 0.0f);
+	obj2.Renderer.Scale(10.0f, 10.0f, 10.0f);
+
 }
 
 void mouseMove(int x, int y) {
@@ -122,6 +136,29 @@ void mouseMove(int x, int y) {
 	player_camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
+void arrowKeyes(int key, int x, int y) {
+	switch (key)
+	{
+		case GLUT_KEY_UP:
+			obj1.Renderer.SetRotation(0.0f, 180.0f, 0.0f);
+			obj1.Renderer.Move(0.0f, 0.0f, -0.05f);
+			break;
+		case GLUT_KEY_DOWN:
+			obj1.Renderer.SetRotation(0.0f, 0.0f, 0.0f);
+			obj1.Renderer.Move(0.0f, 0.0f, 0.05f);
+			break;
+		case GLUT_KEY_LEFT:
+			obj1.Renderer.SetRotation(0.0f, 270.0f, 0.0f);
+			obj1.Renderer.Move(-0.05f, 0.0f, 0.0f);
+			break;
+		case GLUT_KEY_RIGHT:
+			obj1.Renderer.SetRotation(0.0f, 90.0f, 0.0f);
+			obj1.Renderer.Move(0.05f, 0.0f, 0.0f);
+			
+			break;
+	}
+}
+
 void keypress(unsigned char key, int x, int y) {
 
 	if(key == 'w')
@@ -134,6 +171,44 @@ void keypress(unsigned char key, int x, int y) {
 		player_camera.ProcessKeyboard(RIGHT, delta);			
 	if(key == 'r')
 		player_camera.Reset();
+	if (key == 'o')
+		player_camera.SetProjection(ORTHO);
+	if (key == 'p')
+		player_camera.SetProjection(PERSP);
+	if (key == 'z') {
+		if (scalex)
+			obj1.Renderer.Scale(2.0f, 1.0f, 1.0f);
+		else
+			obj1.Renderer.Scale(1.0f, 1.0f, 1.0f);
+		scalex = !scalex;
+	}
+	if (key == 'x') {
+		if (scaley)
+			obj1.Renderer.Scale(1.0f, 2.0f, 1.0f);
+		else
+			obj1.Renderer.Scale(1.0f, 1.0f, 1.0f);
+		scaley = !scaley;
+	}
+	if (key == 'c') {
+		if (scalez)
+			obj1.Renderer.Scale(1.0f, 1.0f, 2.0f);
+		else
+			obj1.Renderer.Scale(1.0f, 1.0f, 1.0f);
+		scalez = !scalez;
+	}
+	if (key == 'v') {
+		if (scalexyz)
+			obj1.Renderer.Scale(10.0f, 10.0f, 10.0f);
+		else
+			obj1.Renderer.Scale(1.0f, 1.0f, 1.0f);
+		scalexyz = !scalexyz;
+	}
+	if (key == 'b')
+		obj1.Renderer.Rotate(45.0f, 0.f, 0.f);
+	if (key == 'n')
+		obj1.Renderer.Rotate(0.f, 45.0f, 0.f);
+	if (key == 'm')
+		obj1.Renderer.Rotate(0.f, 0.f, 45.0f);
 }
 int main(int argc, char** argv) {
 	// Set up the window
@@ -147,6 +222,7 @@ int main(int argc, char** argv) {
 	glutIdleFunc(updateScene);
 	glutKeyboardFunc(keypress);
 	glutMotionFunc(mouseMove);
+	glutSpecialFunc(arrowKeyes);
 
 	// A call to glewInit() must be done after glut is initialized!
 	GLenum res = glewInit();

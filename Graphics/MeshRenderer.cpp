@@ -7,8 +7,6 @@ MeshRenderer::MeshRenderer(const char* mesh_file_name, const char* pvs_file_name
 	Render();
 }
 
-using namespace glm;
-
 char* MeshRenderer::readShaderSource(const char* shaderFile) {
 	FILE* fp;
 	fopen_s(&fp, shaderFile, "rb");
@@ -28,22 +26,61 @@ char* MeshRenderer::readShaderSource(const char* shaderFile) {
 	return buf;
 }
 
-void MeshRenderer::Draw(int width, int height, vec3 position, float angle, Camera* camera) {
-	this->mesh_shader.Use();
+void MeshRenderer::RecalculateTransform() {
+	transform = transformMatrix;
+	transform = glm::rotate(transform, RotX, glm::vec3(1.0f, 0.0f, 0.0f));
+	transform = glm::rotate(transform, RotY, glm::vec3(0.0f, 1.0f, 0.0f));
+	transform = glm::rotate(transform, RotZ, glm::vec3(0.0f, 0.0f, 1.0f));
+	transform *= scaleMatrix;
+}
 
-	mat4 projection = perspective(90.0f, (float)width / (float)height, 0.1f, 100.0f);	// Root of the Hierarchy
-	mat4 view = mat4(1.0f);
-	view = camera->GetViewMatrix();
-	mat4 model = mat4(1.0f);
-	model = translate(model, position);
-	model = rotate(model, radians(angle), vec3(1.0f, 0.0f, 0.0f));
+void MeshRenderer::Draw(glm::mat4 projection, glm::mat4 view) {
+	this->mesh_shader.Use();
 	mesh_shader.SetMatrix4("proj", projection);
 	mesh_shader.SetMatrix4("view", view);
-	mesh_shader.SetMatrix4("model", model);
+	mesh_shader.SetMatrix4("model", transform);
 	mesh_vao.Bind();
 	glDrawArrays(GL_TRIANGLES, 0, getMeshPointCount());
 	mesh_vao.Unbind();
 
+}
+
+void MeshRenderer::Move(float posx = 0.0f, float posy = 0.0f, float posz = 0.0f) {
+	transformMatrix = glm::translate(transformMatrix, glm::vec3(posx, posy, posz));
+	RecalculateTransform();
+}
+
+void MeshRenderer::Scale(float scalex = 1.0f, float scaley = 1.0f, float scalez = 1.0f) {
+	scaleMatrix = glm::scale(scalex, scaley, scalez);
+	RecalculateTransform();
+}
+
+void MeshRenderer::Rotate(float rotx = 0.0f, float roty = 0.0f, float rotz = 0.0f) {
+	RotX += rotx;
+	RotY += roty;
+	RotZ += rotz;
+	if (RotX <= 360.0f)
+		RotX -= 360.0f;
+	if (RotY <= 360.0f)
+		RotY -= 360.0f;
+	if (RotZ <= 360.0f)
+		RotZ -= 360.0f;
+
+	RecalculateTransform();
+}
+
+void MeshRenderer::SetRotation(float rotx = 0.0f, float roty = 0.0f, float rotz = 0.0f) {
+	RotX = rotx;
+	RotY = roty;
+	RotZ = rotz;
+	if (RotX <= 360.0f)
+		RotX -= 360.0f;
+	if (RotY <= 360.0f)
+		RotY -= 360.0f;
+	if (RotZ <= 360.0f)
+		RotZ -= 360.0f;
+
+	RecalculateTransform();
 }
 
 void MeshRenderer::ImportMeshData(const char* file_name){
@@ -72,15 +109,15 @@ void MeshRenderer::ImportMeshData(const char* file_name){
 		for (unsigned int v_i = 0; v_i < mesh->mNumVertices; v_i++) {
 			if (mesh->HasPositions()) {
 				const aiVector3D* vp = &(mesh->mVertices[v_i]);
-				mesh_data.mVertices.push_back(vec3(vp->x, vp->y, vp->z));
+				mesh_data.mVertices.push_back(glm::vec3(vp->x, vp->y, vp->z));
 			}
 			if (mesh->HasNormals()) {
 				const aiVector3D* vn = &(mesh->mNormals[v_i]);
-				mesh_data.mNormals.push_back(vec3(vn->x, vn->y, vn->z));
+				mesh_data.mNormals.push_back(glm::vec3(vn->x, vn->y, vn->z));
 			}
 			if (mesh->HasTextureCoords(0)) {
 				const aiVector3D* vt = &(mesh->mTextureCoords[0][v_i]);
-				mesh_data.mTextureCoords.push_back(vec2(vt->x, vt->y));
+				mesh_data.mTextureCoords.push_back(glm::vec2(vt->x, vt->y));
 			}
 			if (mesh->HasTangentsAndBitangents()) {
 				/* You can extract tangents and bitangents here              */
@@ -109,8 +146,8 @@ void MeshRenderer::Render(){
 	GLuint loc2 = glGetAttribLocation(mesh_shader.ID, "vertex_normal");
 	GLuint loc3 = glGetAttribLocation(mesh_shader.ID, "vertex_texture");
 
-	VBO mesh_vbo_v = VBO(mesh_data.mPointCount * sizeof(vec3), &mesh_data.mVertices[0]);
-	VBO mesh_vbo_f = VBO(mesh_data.mPointCount * sizeof(vec3), &mesh_data.mNormals[0]);
+	VBO mesh_vbo_v = VBO(mesh_data.mPointCount * sizeof(glm::vec3), &mesh_data.mVertices[0]);
+	VBO mesh_vbo_f = VBO(mesh_data.mPointCount * sizeof(glm::vec3), &mesh_data.mNormals[0]);
 
 	mesh_vao.Init();
 	mesh_vao.Bind();

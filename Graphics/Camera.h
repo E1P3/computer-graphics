@@ -14,10 +14,15 @@ enum Camera_Movement {
     RIGHT
 };
 
+enum Camera_Projection {
+    ORTHO,
+    PERSP
+};
+
 // Default camera values
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
-const float SPEED = 100.0f;
+const float SPEED = 10.0f;
 const float SENSITIVITY = 1.0f;
 const float ZOOM = 45.0f;
 
@@ -32,6 +37,7 @@ public:
     glm::vec3 Up;
     glm::vec3 Right;
     glm::vec3 WorldUp;
+    glm::mat4 projection;
     // euler Angles
     float Yaw;
     float Pitch;
@@ -47,6 +53,7 @@ public:
         WorldUp = up;
         Yaw = yaw;
         Pitch = pitch;
+        projection = glm::ortho(0.f, 1920.f, 0.f, 1080.f, -10.f, 10.f);
         updateCameraVectors();
     }
     // constructor with scalar values
@@ -63,6 +70,20 @@ public:
     glm::mat4 GetViewMatrix()
     {
         return glm::lookAt(Position, Position + Front, Up);
+    }
+
+    void SetProjection(Camera_Projection proj, float width = 1920.0f, float height = 1080.0f, float angle = 90.0f, float ncp = 0.1f, float fcp = 1000.0f) {
+        if (proj == PERSP) {
+            projection = glm::perspective(angle, width / height, ncp, fcp);
+        }
+        else if (proj == ORTHO) {
+            projection = glm::ortho(Position.x-10.f, Position.x + 10.f, Position.y  -10.f, Position.y + 10.f, Position.z  -10.f, Position.z + 10.f);
+        }
+    }
+
+    glm::mat4 GetProjection()
+    {
+        return projection;
     }
 
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)

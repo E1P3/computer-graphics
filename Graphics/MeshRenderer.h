@@ -12,6 +12,8 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/transform.hpp>
 
 // Assimp includes
 #include <assimp/cimport.h> // scene importer
@@ -22,8 +24,6 @@
 #include "Camera.h"
 #include "VAO.h"
 #include "VBO.h"
-
-using namespace glm;
 
 class MeshRenderer
 {
@@ -41,6 +41,21 @@ private:
 	const char* PVS;
 	const char* PFS;
 	char* readShaderSource(const char* shaderFile);
+	float PosX = 0.0f;
+	float PosY = 0.0f;
+	float PosZ = 0.0f;
+	float RotX = 0.0f;
+	float RotY = 0.0f;
+	float RotZ = 0.0f;
+	float ScaleX = 1.0f;
+	float ScaleY = 1.0f;
+	float ScaleZ = 1.0f;
+	glm::mat4 transform = glm::mat4(1.0f);
+	VAO mesh_vao;
+	Shader mesh_shader;
+	glm::mat4 transformMatrix = glm::mat4(1.0f);;
+	glm::mat4 scaleMatrix = glm::mat4(1.0f);
+	void RecalculateTransform();
 
 public:
 	MeshRenderer() {}
@@ -49,10 +64,12 @@ public:
 	void ImportVertexShader(const char* file_name);
 	void ImportFragmentShader(const char* file_name);
 	void Render();
-	void Draw(int width, int height, glm::vec3 position, float angle, Camera* camera);
+	void Draw(glm::mat4 projection, glm::mat4 view);
+	void Move(float posx, float posy, float posz);
+	void Rotate(float rotx, float roty, float rotz);
+	void SetRotation(float rotx, float roty, float rotz);
+	void Scale(float scalex, float scaley, float scalez);
 	GLuint getShaderProgramID();
 	size_t getMeshPointCount();
-	VAO mesh_vao;
-	Shader mesh_shader;
 };
 #endif
