@@ -50,7 +50,6 @@ private:
 	float ScaleX = 1.0f;
 	float ScaleY = 1.0f;
 	float ScaleZ = 1.0f;
-	glm::mat4 transform = glm::mat4(1.0f);
 	VAO mesh_vao;
 	Shader mesh_shader;
 	glm::mat4 transformMatrix = glm::mat4(1.0f);;
@@ -64,12 +63,15 @@ public:
 	void ImportVertexShader(const char* file_name);
 	void ImportFragmentShader(const char* file_name);
 	void Render();
-	void Draw(glm::mat4 projection, glm::mat4 view);
+	void Draw(glm::mat4 projection, glm::mat4 view, glm::vec3 viewPos, glm::vec3 lightPos);
 	void Move(float posx, float posy, float posz);
 	void Rotate(float rotx, float roty, float rotz);
 	void SetRotation(float rotx, float roty, float rotz);
 	void Scale(float scalex, float scaley, float scalez);
 	GLuint getShaderProgramID();
 	size_t getMeshPointCount();
+	glm::mat4 transform = glm::mat4(1.0f);
+	glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+
 };
 #endif

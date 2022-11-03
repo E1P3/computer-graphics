@@ -34,11 +34,13 @@ void MeshRenderer::RecalculateTransform() {
 	transform *= scaleMatrix;
 }
 
-void MeshRenderer::Draw(glm::mat4 projection, glm::mat4 view) {
+void MeshRenderer::Draw(glm::mat4 projection, glm::mat4 view,glm::vec3 viewPos ,glm::vec3 lightPos) {
 	this->mesh_shader.Use();
 	mesh_shader.SetMatrix4("proj", projection);
 	mesh_shader.SetMatrix4("view", view);
 	mesh_shader.SetMatrix4("model", transform);
+	mesh_shader.SetVector3f("lightPos", lightPos);
+	mesh_shader.SetVector3f("viewPos", viewPos);
 	mesh_vao.Bind();
 	glDrawArrays(GL_TRIANGLES, 0, getMeshPointCount());
 	mesh_vao.Unbind();
@@ -47,6 +49,9 @@ void MeshRenderer::Draw(glm::mat4 projection, glm::mat4 view) {
 
 void MeshRenderer::Move(float posx = 0.0f, float posy = 0.0f, float posz = 0.0f) {
 	transformMatrix = glm::translate(transformMatrix, glm::vec3(posx, posy, posz));
+	position.x += posx;
+	position.y += posy;
+	position.z += posz;
 	RecalculateTransform();
 }
 
