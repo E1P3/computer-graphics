@@ -24,6 +24,7 @@
 #include "Camera.h"
 #include "VAO.h"
 #include "VBO.h"
+#include "Material.h"
 
 class MeshRenderer
 {
@@ -54,6 +55,7 @@ private:
 	Shader mesh_shader;
 	glm::mat4 transformMatrix = glm::mat4(1.0f);;
 	glm::mat4 scaleMatrix = glm::mat4(1.0f);
+	Material mesh_mat = Material();
 	void RecalculateTransform();
 
 public:
@@ -63,6 +65,7 @@ public:
 	void ImportVertexShader(const char* file_name);
 	void ImportFragmentShader(const char* file_name);
 	void Render();
+	void SetMaterial(Material mat);
 	void Draw(glm::mat4 projection, glm::mat4 view, glm::vec3 viewPos, glm::vec3 lightPos);
 	void Move(float posx, float posy, float posz);
 	void Rotate(float rotx, float roty, float rotz);

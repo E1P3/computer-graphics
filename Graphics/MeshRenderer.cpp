@@ -34,6 +34,10 @@ void MeshRenderer::RecalculateTransform() {
 	transform *= scaleMatrix;
 }
 
+void MeshRenderer::SetMaterial(Material mat) {
+	mesh_mat = mat;
+}
+
 void MeshRenderer::Draw(glm::mat4 projection, glm::mat4 view,glm::vec3 viewPos ,glm::vec3 lightPos) {
 	this->mesh_shader.Use();
 	mesh_shader.SetMatrix4("proj", projection);
@@ -41,6 +45,10 @@ void MeshRenderer::Draw(glm::mat4 projection, glm::mat4 view,glm::vec3 viewPos ,
 	mesh_shader.SetMatrix4("model", transform);
 	mesh_shader.SetVector3f("lightPos", lightPos);
 	mesh_shader.SetVector3f("viewPos", viewPos);
+	mesh_shader.SetVector3f("objectColor", mesh_mat.color);
+	mesh_shader.SetFloat("ambientStrength", mesh_mat.ambientStrength);
+	mesh_shader.SetFloat("diffStrength", mesh_mat.diffStrength);
+	mesh_shader.SetFloat("specularStrength", mesh_mat.specularStrength);
 	mesh_vao.Bind();
 	glDrawArrays(GL_TRIANGLES, 0, getMeshPointCount());
 	mesh_vao.Unbind();

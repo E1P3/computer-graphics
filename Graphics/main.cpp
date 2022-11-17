@@ -20,6 +20,7 @@
 #include "Camera.h"
 #include "MeshRenderer.h"
 #include "GameObject.h"
+#include "Material.h"
 
 
 /*----------------------------------------------------------------------------
@@ -27,22 +28,24 @@ MESH TO LOAD
 ----------------------------------------------------------------------------*/
 // this mesh is a dae file format but you should be able to use any other format too, obj is typically what is used
 // put the mesh in your project directory, or provide a filepath for it here
-#define MESH_MONKEY "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
-#define MESH_PLANE "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/plane.dae"
-#define PVS_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleVertexShader.vert"
-#define PFS_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleFragmentShader.frag"
-#define PVS_LIGHT_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/light.vert"
-#define PFS_LIGHT_NAME "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/light.frag"
-#define MESH_AK "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ak.obj"
-#define MESH_BUILDING "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/building.dae"
-#define MESH_DUDE "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/dude.dae"
-#define MESH_CS "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/terroristo.dae"
-#define MESH_DEER "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/deer.dae"
-#define MESH_BATEMAN "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/juunioor.dae"
-#define MESH_PENG "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/pengo.dae"
-#define MESH_SPHERE "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/sphere.dae"
-#define MESH_HEAD "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/snowmanHead.dae"
-#define MESH_BRANCH "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/branch.dae"
+// laptop dir C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes
+
+#define PVS_NAME		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Shaders/simpleVertexShader.vert"
+#define PFS_NAME		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Shaders/simpleFragmentShader.frag"
+#define PVS_LIGHT_NAME	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Shaders/light.vert"
+#define PFS_LIGHT_NAME	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Shaders/light.frag"
+#define MESH_MONKEY		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
+#define MESH_PLANE		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/plane.dae"
+#define MESH_AK			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ak.obj"
+#define MESH_BUILDING	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/building.dae"
+#define MESH_DUDE		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/dude.dae"
+#define MESH_CS			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/terroristo.dae"
+#define MESH_DEER		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/deer.dae"
+#define MESH_BATEMAN	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/juunioor.dae"
+#define MESH_PENG		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/pengo.dae"
+#define MESH_SPHERE		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/sphere.dae"
+#define MESH_HEAD		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/snowmanHead.dae"
+#define MESH_BRANCH		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/branch.dae"
 /*----------------------------------------------------------------------------
 ----------------------------------------------------------------------------*/
 
@@ -92,7 +95,7 @@ void display() {
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//printf("Frame \n");
-	std::cout << "CAMERA: " << player_camera.Position.x << ", " << player_camera.Position.y << ", " << player_camera.Position.z << ", YAW: " << player_camera.Yaw << " PITCH: " << player_camera.Pitch << "\n";
+	//std::cout << "CAMERA: " << player_camera.Position.x << ", " << player_camera.Position.y << ", " << player_camera.Position.z << ", YAW: " << player_camera.Yaw << " PITCH: " << player_camera.Pitch << "\n";
 
 	
 	//obj1.Renderer.transform = glm::rotate(obj2.Renderer.transform, 90.0f, glm::vec3(1.f, 0.f, 1.f));
@@ -106,7 +109,6 @@ void display() {
 	local1 = glm::rotate(sin(counter) * 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * local1;
 	local1 = glm::translate(0.0f, 1.0f, 0.0f) * local1;
 	Snowman.base.Renderer.transform = local1 * glm::scale(1.5f, 1.5f, 1.5f);
-
 	local2 = glm::mat4(1.0f);
 	local2 = glm::rotate(sin(counter) * 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * local2;
 	local2 = glm::translate(0.0f, 1.5f, 0.0f) * local2;
@@ -163,18 +165,25 @@ void init()
 {
 	player_camera.SetProjection(PERSP);
 
+	Material sphereMat = Material(glm::vec3(1.0f, 0.0f, 0.0f), 0.2f, 0.8f, 0.9f);
+	Material floorMat = Material(glm::vec3(1.0f, 1.0f, 1.0f), 0.2f, 0.5f, 1.0f);
+	Material snowmanMat = Material(glm::vec3(1.0f, 1.0f, 1.0f), 0.5f, 0.8f , 0.1f);
+
 	sphere = GameObject();
 	sphere.RenderSetup(MESH_SPHERE, PVS_NAME, PFS_NAME);
 	sphere.Renderer.Move(5.0f, 5.0f, 5.0f);
 
 	Snowman.base = GameObject();
 	Snowman.base.RenderSetup(MESH_SPHERE, PVS_NAME, PFS_NAME);
+	Snowman.base.Renderer.SetMaterial(snowmanMat);
 
 	Snowman.arm = GameObject();
 	Snowman.arm.RenderSetup(MESH_SPHERE, PVS_NAME, PFS_NAME);
+	Snowman.arm.Renderer.SetMaterial(snowmanMat);
 
 	Snowman.head = GameObject();
 	Snowman.head.RenderSetup(MESH_HEAD, PVS_NAME, PFS_NAME);
+	Snowman.head.Renderer.SetMaterial(snowmanMat);
 
 	Snowman.branch_left = GameObject();
 	Snowman.branch_left.RenderSetup(MESH_BRANCH, PVS_NAME, PFS_NAME);
@@ -191,10 +200,12 @@ void init()
 	terrain.RenderSetup(MESH_PLANE, PVS_NAME, PFS_NAME);
 	terrain.Renderer.Rotate(270.0f, 0.0f, 0.0f);
 	terrain.Renderer.Scale(1000.0f, 1000.0f, 1000.0f);
+	terrain.Renderer.SetMaterial(floorMat);
 
 	for (int i = 0; i < 10; i++) {
 		spheres[i] = GameObject();
 		spheres[i].RenderSetup(MESH_SPHERE, PVS_NAME, PFS_NAME);
+		spheres[i].Renderer.SetMaterial(sphereMat);
 		spheres[i].Renderer.Move(cubePositions[i].x * 4 , cubePositions[i].y * 2 + 5, cubePositions[i].z);
 		spheres[i].Renderer.Scale(cubePositions[i].x , cubePositions[i].x , cubePositions[i].x );
 	}
