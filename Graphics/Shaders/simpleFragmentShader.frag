@@ -3,10 +3,7 @@
 in vec3 FragPos;
 in vec3 Normal;
 in vec3 LightPos;
-uniform vec3 objectColor;
-uniform float ambientStrength;
-uniform float diffStrength;
-uniform float specularStrength;
+
 
 uniform vec3 viewPos;
 
@@ -15,6 +12,10 @@ void main()
 {
     vec3 lightColor = vec3 (1.0, 1.0, 1.0);
     
+    float ambientStrength = 0.1;
+    float diffStrength = 0.7;
+    float specularStrength = 0.2;
+
     vec3 ambient = ambientStrength * lightColor;
 
     vec3 norm = normalize(Normal);
@@ -27,6 +28,6 @@ void main()
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64);
     vec3 specular = specularStrength * spec * lightColor;  
 
-    vec3 result = (ambient + diffuse + specular) * objectColor;
+    vec3 result = (ambient + diffuse + specular);
     gl_FragColor = vec4(result, 1.0);
 }  

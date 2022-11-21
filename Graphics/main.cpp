@@ -18,10 +18,10 @@
 
 // Project includes
 #include "Camera.h"
-#include "MeshRenderer.h"
+#include "Model.h"
+#include "Mesh.h"
+#include "shader.h"
 #include "GameObject.h"
-#include "Material.h"
-
 
 /*----------------------------------------------------------------------------
 MESH TO LOAD
@@ -46,6 +46,7 @@ MESH TO LOAD
 #define MESH_SPHERE		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/sphere.dae"
 #define MESH_HEAD		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/snowmanHead.dae"
 #define MESH_BRANCH		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/branch.dae"
+#define MESH_VAMPIRE	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/vampire.dae"
 /*----------------------------------------------------------------------------
 ----------------------------------------------------------------------------*/
 
@@ -94,11 +95,6 @@ void display() {
 	glDepthFunc(GL_LESS); // depth-testing interprets a smaller value as "closer"
 	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//printf("Frame \n");
-	//std::cout << "CAMERA: " << player_camera.Position.x << ", " << player_camera.Position.y << ", " << player_camera.Position.z << ", YAW: " << player_camera.Yaw << " PITCH: " << player_camera.Pitch << "\n";
-
-	
-	//obj1.Renderer.transform = glm::rotate(obj2.Renderer.transform, 90.0f, glm::vec3(1.f, 0.f, 1.f));
 
 	counter += delta;
 	if (counter > 100)
@@ -108,41 +104,41 @@ void display() {
 	local1 = glm::mat4(1.0f);
 	local1 = glm::rotate(sin(counter) * 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * local1;
 	local1 = glm::translate(0.0f, 1.0f, 0.0f) * local1;
-	Snowman.base.Renderer.transform = local1 * glm::scale(1.5f, 1.5f, 1.5f);
+	Snowman.base.transform = local1 * glm::scale(1.5f, 1.5f, 1.5f);
 	local2 = glm::mat4(1.0f);
 	local2 = glm::rotate(sin(counter) * 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * local2;
 	local2 = glm::translate(0.0f, 1.5f, 0.0f) * local2;
-	Snowman.arm.Renderer.transform = local1 * local2 * glm::scale(1.2f, 1.2f, 1.2f);;
+	Snowman.arm.transform = local1 * local2 * glm::scale(1.2f, 1.2f, 1.2f);;
 
 	local21 = glm::mat4(1.0f);
 	local21 = glm::rotate(90.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(-sin(counter) * 40.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * local21;
 	local21 = glm::translate(1.0f, 0.5f, 0.0f) * local21;
-	Snowman.branch_right.Renderer.transform = local1 * local2 * local21 * glm::scale(0.2f, 0.2f, 0.2f);
+	Snowman.branch_right.transform = local1 * local2 * local21 * glm::scale(0.2f, 0.2f, 0.2f);
 
 	local22 = glm::mat4(1.0f);
 	local22 = glm::rotate(270.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(sin(counter) * 40.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * local22;
 	local22 = glm::translate(-1.0f, 0.5f, 0.0f) * local22;
-	Snowman.branch_left.Renderer.transform = local1 * local2 * local22 * glm::scale(0.2f, 0.2f, 0.2f);
+	Snowman.branch_left.transform = local1 * local2 * local22 * glm::scale(0.2f, 0.2f, 0.2f);
 
 
 	local3 = glm::mat4(1.0f);
-	local3 = glm::rotate(-90.0f, glm::vec3(1.0f, 0.0f, 0.0f))* glm::rotate(270.0f, glm::vec3(0.0f, 0.0f, 1.0f)) * glm::rotate(sin(counter) * 10.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * local3;
+	local3 = glm::rotate(-90.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * glm::rotate(270.0f, glm::vec3(0.0f, 0.0f, 1.0f)) * glm::rotate(sin(counter) * 10.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * local3;
 	local3 = glm::translate(0.0f, 1.5f, 0.0f) * local3;
-	Snowman.head.Renderer.transform = local1 * local2 * local3 * glm::scale(0.4f, 0.4f, 0.4f);
-	
-	terrain.Renderer.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(),player_camera.Position, light.Renderer.position);
-	light.Renderer.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.Renderer.position);
-	Snowman.base.Renderer.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.Renderer.position);
-	Snowman.arm.Renderer.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.Renderer.position);
-	Snowman.branch_right.Renderer.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.Renderer.position);
-	Snowman.branch_left.Renderer.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.Renderer.position);
-	Snowman.head.Renderer.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.Renderer.position);
+	Snowman.head.transform = local1 * local2 * local3 * glm::scale(0.4f, 0.4f, 0.4f);
 
-	sphere.Renderer.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.Renderer.position);
+	terrain.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.position);
+	light.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.position);
+	Snowman.base.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.position);
+	Snowman.arm.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.position);
+	Snowman.branch_right.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.position);
+	Snowman.branch_left.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.position);
+	Snowman.head.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.position);
+
+	sphere.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.position);
 	//cout << "FPS: " << 1 / delta << "\n";
 
 	for (int i = 0; i < 10; i++) {
-		spheres[i].Renderer.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.Renderer.position);
+		spheres[i].Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.position);
 	}
 
 	glutSwapBuffers();
@@ -165,49 +161,31 @@ void init()
 {
 	player_camera.SetProjection(PERSP);
 
-	Material sphereMat = Material(glm::vec3(1.0f, 0.0f, 0.0f), 0.2f, 0.8f, 0.9f);
-	Material floorMat = Material(glm::vec3(1.0f, 1.0f, 1.0f), 0.2f, 0.5f, 1.0f);
-	Material snowmanMat = Material(glm::vec3(1.0f, 1.0f, 1.0f), 0.5f, 0.8f , 0.1f);
+	sphere = GameObject(MESH_SPHERE, PVS_NAME, PFS_NAME);
+	sphere.Move(5.0f, 5.0f, 5.0f);
 
-	sphere = GameObject();
-	sphere.RenderSetup(MESH_SPHERE, PVS_NAME, PFS_NAME);
-	sphere.Renderer.Move(5.0f, 5.0f, 5.0f);
+	Snowman.base = GameObject(MESH_SPHERE, PVS_NAME, PFS_NAME);
 
-	Snowman.base = GameObject();
-	Snowman.base.RenderSetup(MESH_SPHERE, PVS_NAME, PFS_NAME);
-	Snowman.base.Renderer.SetMaterial(snowmanMat);
+	Snowman.arm = GameObject(MESH_SPHERE, PVS_NAME, PFS_NAME);
 
-	Snowman.arm = GameObject();
-	Snowman.arm.RenderSetup(MESH_SPHERE, PVS_NAME, PFS_NAME);
-	Snowman.arm.Renderer.SetMaterial(snowmanMat);
+	Snowman.head = GameObject(MESH_HEAD, PVS_NAME, PFS_NAME);
 
-	Snowman.head = GameObject();
-	Snowman.head.RenderSetup(MESH_HEAD, PVS_NAME, PFS_NAME);
-	Snowman.head.Renderer.SetMaterial(snowmanMat);
+	Snowman.branch_left = GameObject(MESH_BRANCH, PVS_NAME, PFS_NAME);
 
-	Snowman.branch_left = GameObject();
-	Snowman.branch_left.RenderSetup(MESH_BRANCH, PVS_NAME, PFS_NAME);
+	Snowman.branch_right = GameObject(MESH_BRANCH, PVS_NAME, PFS_NAME);
 
-	Snowman.branch_right = GameObject();
-	Snowman.branch_right.RenderSetup(MESH_BRANCH, PVS_NAME, PFS_NAME);
+	light = GameObject(MESH_SPHERE, PVS_LIGHT_NAME, PFS_LIGHT_NAME);
+	light.Scale(0.1f, 0.1f, 0.1f);
+	light.Move(1.0f, 5.0f, 5.0f);
 
-	light = GameObject();
-	light.RenderSetup(MESH_SPHERE, PVS_LIGHT_NAME, PFS_LIGHT_NAME);
-	light.Renderer.Scale(0.1f, 0.1f, 0.1f);
-	light.Renderer.Move(1.0f, 5.0f, 5.0f);
-
-	terrain = GameObject();
-	terrain.RenderSetup(MESH_PLANE, PVS_NAME, PFS_NAME);
-	terrain.Renderer.Rotate(270.0f, 0.0f, 0.0f);
-	terrain.Renderer.Scale(1000.0f, 1000.0f, 1000.0f);
-	terrain.Renderer.SetMaterial(floorMat);
+	terrain = GameObject(MESH_PLANE, PVS_NAME, PFS_NAME);
+	terrain.Rotate(270.0f, 0.0f, 0.0f);
+	terrain.Scale(1000.0f, 1000.0f, 1000.0f);
 
 	for (int i = 0; i < 10; i++) {
-		spheres[i] = GameObject();
-		spheres[i].RenderSetup(MESH_SPHERE, PVS_NAME, PFS_NAME);
-		spheres[i].Renderer.SetMaterial(sphereMat);
-		spheres[i].Renderer.Move(cubePositions[i].x * 4 , cubePositions[i].y * 2 + 5, cubePositions[i].z);
-		spheres[i].Renderer.Scale(cubePositions[i].x , cubePositions[i].x , cubePositions[i].x );
+		spheres[i] = GameObject(MESH_SPHERE, PVS_NAME, PFS_NAME);
+		spheres[i].Move(cubePositions[i].x * 4, cubePositions[i].y * 2 + 5, cubePositions[i].z);
+		spheres[i].Scale(cubePositions[i].x, cubePositions[i].x, cubePositions[i].x);
 	}
 
 }
@@ -242,23 +220,23 @@ void mouseButton(int button, int state, int x, int y) {
 void arrowKeyes(int key, int x, int y) {
 	switch (key)
 	{
-		case GLUT_KEY_UP:
-			light.Renderer.SetRotation(0.0f, 180.0f, 0.0f);
-			light.Renderer.Move(0.0f, 0.0f, -0.1f);
-			break;
-		case GLUT_KEY_DOWN:
-			light.Renderer.SetRotation(0.0f, 0.0f, 0.0f);
-			light.Renderer.Move(0.0f, 0.0f, 0.1f);
-			break;
-		case GLUT_KEY_LEFT:
-			light.Renderer.SetRotation(0.0f, 270.0f, 0.0f);
-			light.Renderer.Move(-0.1f, 0.0f, 0.0f);
-			break;
-		case GLUT_KEY_RIGHT:
-			light.Renderer.SetRotation(0.0f, 90.0f, 0.0f);
-			light.Renderer.Move(0.1f, 0.0f, 0.0f);
-			
-			break;
+	case GLUT_KEY_UP:
+		light.SetRotation(0.0f, 180.0f, 0.0f);
+		light.Move(0.0f, 0.0f, -0.1f);
+		break;
+	case GLUT_KEY_DOWN:
+		light.SetRotation(0.0f, 0.0f, 0.0f);
+		light.Move(0.0f, 0.0f, 0.1f);
+		break;
+	case GLUT_KEY_LEFT:
+		light.SetRotation(0.0f, 270.0f, 0.0f);
+		light.Move(-0.1f, 0.0f, 0.0f);
+		break;
+	case GLUT_KEY_RIGHT:
+		light.SetRotation(0.0f, 90.0f, 0.0f);
+		light.Move(0.1f, 0.0f, 0.0f);
+
+		break;
 	}
 }
 
@@ -267,25 +245,25 @@ void keypress(unsigned char key, int x, int y) {
 	int mod = glutGetModifiers();
 
 	if (mod == GLUT_ACTIVE_SHIFT)
-		light.Renderer.Move(0.0f, 0.1f, 0.0f);
+		light.Move(0.0f, 0.1f, 0.0f);
 
 	if (mod == GLUT_ACTIVE_CTRL)
-		light.Renderer.Move(0.0f, -0.1f, 0.0f);
+		light.Move(0.0f, -0.1f, 0.0f);
 
-	if(key == 'w')
+	if (key == 'w')
 		player_camera.ProcessKeyboard(FORWARD, delta);
-	if(key == 's')
-		player_camera.ProcessKeyboard(BACKWARD, delta);			
-	if(key == 'a')
-		player_camera.ProcessKeyboard(LEFT, delta);			
-	if(key == 'd')
-		player_camera.ProcessKeyboard(RIGHT, delta);			
-	if(key == 'r')
+	if (key == 's')
+		player_camera.ProcessKeyboard(BACKWARD, delta);
+	if (key == 'a')
+		player_camera.ProcessKeyboard(LEFT, delta);
+	if (key == 'd')
+		player_camera.ProcessKeyboard(RIGHT, delta);
+	if (key == 'r')
 		player_camera.Reset();
 	if (key == 't')
-		light.Renderer.Move(0.0f, 0.1f, 0.0f);
+		light.Move(0.0f, 0.1f, 0.0f);
 	if (key == 'g')
-		light.Renderer.Move(0.0f, -0.1f, 0.0f);
+		light.Move(0.0f, -0.1f, 0.0f);
 	if (key == 'o')
 		player_camera.SetProjection(ORTHO);
 	if (key == 'p')
