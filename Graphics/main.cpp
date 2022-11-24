@@ -30,29 +30,30 @@ MESH TO LOAD
 // put the mesh in your project directory, or provide a filepath for it here
 // laptop dir C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes
 
-#define PVS_NAME		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Shaders/simpleVertexShader.vert"
-#define PFS_NAME		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Shaders/simpleFragmentShader.frag"
-#define PVS_LIGHT_NAME	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Shaders/light.vert"
-#define PFS_LIGHT_NAME	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Shaders/light.frag"
-#define MESH_MONKEY		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
-#define MESH_PLANE		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/plane.dae"
-#define MESH_AK			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ak.obj"
-#define MESH_BUILDING	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/building.dae"
-#define MESH_DUDE		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/dude.dae"
-#define MESH_CS			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/terroristo.dae"
-#define MESH_DEER		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/deer.dae"
-#define MESH_BATEMAN	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/juunioor.dae"
-#define MESH_PENG		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/pengo.dae"
-#define MESH_SPHERE		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/sphere.dae"
-#define MESH_HEAD		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/snowmanHead.dae"
-#define MESH_BRANCH		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/branch.dae"
-#define MESH_VAMPIRE	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/vampire.dae"
+#define PVS_NAME		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleVertexShader.vert"
+#define PFS_NAME		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/simpleFragmentShader.frag"
+#define PVS_LIGHT_NAME	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/light.vert"
+#define PFS_LIGHT_NAME	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Shaders/light.frag"
+#define MESH_MONKEY		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
+#define MESH_PLANE		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/plane.dae"
+#define MESH_AK			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ak.obj"
+#define MESH_BUILDING	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/building.dae"
+#define MESH_DUDE		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/dude.dae"
+#define MESH_CS			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/terroristo.dae"
+#define MESH_DEER		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/deer.dae"
+#define MESH_BATEMAN	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/juunioor.dae"
+#define MESH_PENG		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/pengo.dae"
+#define MESH_SPHERE		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/sphere.dae"
+#define MESH_DEFAULT    "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/default_sphere.dae"
+#define MESH_HEAD		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/snowmanHead.dae"
+#define MESH_BRANCH		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/branch.dae"
+#define MESH_VAMPIRE	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/vampire.dae"
 /*----------------------------------------------------------------------------
 ----------------------------------------------------------------------------*/
 
 using namespace std;
 Camera player_camera = Camera();
-GameObject terrain, light, sphere;
+GameObject terrain, light, sphere, vamp, bateman, default_sphere;
 GameObject spheres[10];
 bool firstMouse = true;
 float delta = 0.0f;
@@ -100,6 +101,8 @@ void display() {
 	if (counter > 100)
 		counter = 0;
 
+	bateman.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.position);
+	default_sphere.Draw(player_camera.GetProjection(), player_camera.GetViewMatrix(), player_camera.Position, light.position);
 
 	local1 = glm::mat4(1.0f);
 	local1 = glm::rotate(sin(counter) * 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * local1;
@@ -161,9 +164,14 @@ void init()
 {
 	player_camera.SetProjection(PERSP);
 
+	default_sphere = GameObject(MESH_DEFAULT, PVS_NAME, PFS_NAME);
+
 	sphere = GameObject(MESH_SPHERE, PVS_NAME, PFS_NAME);
 	sphere.Move(5.0f, 5.0f, 5.0f);
 
+	bateman = GameObject(MESH_BATEMAN, PVS_NAME, PFS_NAME);
+	bateman.Scale(5.f, 5.f, 5.f);
+	bateman.Move(5.f, 0.f, 5.f);
 	Snowman.base = GameObject(MESH_SPHERE, PVS_NAME, PFS_NAME);
 
 	Snowman.arm = GameObject(MESH_SPHERE, PVS_NAME, PFS_NAME);

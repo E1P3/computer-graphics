@@ -60,7 +60,7 @@ private:
 	{
 		// read file via ASSIMP
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
+		const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
 		// check for errors
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
 		{
@@ -69,6 +69,10 @@ private:
 		}
 		// retrieve the directory path of the filepath
 		directory = path.substr(0, path.find_last_of('/'));
+
+		printf("  %i materials\n", scene->mNumMaterials);
+		printf("  %i meshes\n", scene->mNumMeshes);
+		printf("  %i textures\n", scene->mNumTextures);
 
 		// process ASSIMP's root node recursively
 		processNode(scene->mRootNode, scene);
@@ -83,6 +87,7 @@ private:
 			// the node object only contains indices to index the actual objects in the scene. 
 			// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+			printf("    %i vertices in mesh\n", mesh->mNumVertices);
 			meshes.push_back(processMesh(mesh, scene));
 		}
 		// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
@@ -206,6 +211,8 @@ private:
 		string filename = string(path);
 		filename = directory + '/' + filename;
 
+		printf("Loading Texture %s", filename.c_str());
+
 		unsigned int textureID;
 		glGenTextures(1, &textureID);
 
@@ -231,6 +238,7 @@ private:
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 			stbi_image_free(data);
+			
 		}
 		else
 		{
