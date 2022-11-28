@@ -40,10 +40,10 @@ public:
 	}
 
 	// draws the model, and thus all its meshes
-	void Draw(Shader& shader)
+	void Draw(unsigned int shader_ID)
 	{
 		for (unsigned int i = 0; i < meshes.size(); i++)
-			meshes[i].Draw(shader);
+			meshes[i].Draw(shader_ID);
 	}
 
 	auto& GetBoneInfoMap() { return m_BoneInfoMap; }
@@ -87,7 +87,7 @@ private:
 			// the node object only contains indices to index the actual objects in the scene. 
 			// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			printf("    %i vertices in mesh\n", mesh->mNumVertices);
+			printf("  %i vertices in mesh\n", mesh->mNumVertices);
 			meshes.push_back(processMesh(mesh, scene));
 		}
 		// after we've processed all of the meshes (if any) we then recursively process each of the children nodes
@@ -107,7 +107,6 @@ private:
 		}
 	}
 
-
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene)
 	{
 		vector<Vertex> vertices;
@@ -118,8 +117,20 @@ private:
 		{
 			Vertex vertex;
 			SetVertexBoneDataToDefault(vertex);
-			vertex.Position = AssimpGLMHelpers::GetGLMVec(mesh->mVertices[i]);
-			vertex.Normal = AssimpGLMHelpers::GetGLMVec(mesh->mNormals[i]);
+			glm::vec3 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
+            // positions
+            vector.x = mesh->mVertices[i].x;
+            vector.y = mesh->mVertices[i].y;
+            vector.z = mesh->mVertices[i].z;
+            vertex.Position = vector;
+            // normals
+            if (mesh->HasNormals())
+            {
+                vector.x = mesh->mNormals[i].x;
+                vector.y = mesh->mNormals[i].y;
+                vector.z = mesh->mNormals[i].z;
+                vertex.Normal = vector;
+            }
 
 			if (mesh->mTextureCoords[0])
 			{
@@ -128,8 +139,23 @@ private:
 				vec.y = mesh->mTextureCoords[0][i].y;
 				vertex.TexCoords = vec;
 			}
+
+			if (mesh->HasTangentsAndBitangents()) {
+				// tangent
+				vector.x = mesh->mTangents[i].x;
+				vector.y = mesh->mTangents[i].y;
+				vector.z = mesh->mTangents[i].z;
+				vertex.Tangent = vector;
+				// bitangent
+				vector.x = mesh->mBitangents[i].x;
+				vector.y = mesh->mBitangents[i].y;
+				vector.z = mesh->mBitangents[i].z;
+				vertex.Bitangent = vector;
+			}
 			else
 				vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+
+			//cout<< " Position: " << vertex.Position.x << " , " << vertex.Position.y << " , " << vertex.Position.z << "\n";
 
 			vertices.push_back(vertex);
 		}
@@ -139,22 +165,29 @@ private:
 			for (unsigned int j = 0; j < face.mNumIndices; j++)
 				indices.push_back(face.mIndices[j]);
 		}
+		
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
 		vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-		vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
-		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 		std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+		std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 		std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
 		textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
+		cout << " Verticies size: " << vertices.size() << "\n";
+
 		ExtractBoneWeightForVertices(vertices, mesh, scene);
+
+		//for (int i = 0; i < vertices.size(); i++) {
+		//	cout << vertices[i].Tangent.x << " , " << vertices[i].Tangent.y << " , " << vertices[i].Bitangent.x << " , " << vertices[i].Bitangent.y << "\n";
+		//}
 
 		return Mesh(vertices, indices, textures);
 	}
-
+	
 	void SetVertexBoneData(Vertex& vertex, int boneID, float weight)
 	{
 		for (int i = 0; i < MAX_BONE_INFLUENCE; ++i)

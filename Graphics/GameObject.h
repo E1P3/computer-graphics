@@ -19,7 +19,7 @@ class GameObject {
 	
 public:
 	Model model;
-	Shader shader;
+	bool  isLight = false;
 	float PosX = 0.0f;
 	float PosY = 0.0f;
 	float PosZ = 0.0f;
@@ -36,19 +36,13 @@ public:
 
 	GameObject() {}
 
-	GameObject(string const& model_filename, const char* pvs_filename, const char* pfs_filename) {
-		this->shader = Shader(pvs_filename, pfs_filename);
+	GameObject(string const& model_filename) {
 		this->model = Model(model_filename);
 	}
 
-	void Draw(glm::mat4 projection, glm::mat4 view, glm::vec3 viewPos, glm::vec3 lightPos) {
-		shader.Use();
-		shader.SetMatrix4("proj", projection, false);
-		shader.SetMatrix4("view", view, false);
-		shader.SetMatrix4("model", transform, false);
-		shader.SetVector3f("lightPos", lightPos, false);
-		shader.SetVector3f("viewPos", viewPos, false);
-		model.Draw(shader);
+	void Draw(Shader* shader) {
+		shader->SetMatrix4("model", transform, false);
+		model.Draw(shader->ID);
 	}
 
 	void Move(float posx = 0.0f, float posy = 0.0f, float posz = 0.0f) {

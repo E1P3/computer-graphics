@@ -11,7 +11,9 @@ enum Camera_Movement {
     FORWARD,
     BACKWARD,
     LEFT,
-    RIGHT
+    RIGHT,
+    UP,
+    DOWN
 };
 
 enum Camera_Projection {
@@ -71,12 +73,12 @@ public:
         return glm::lookAt(Position, Position + Front, Up);
     }
 
-    void SetProjection(Camera_Projection proj, float width = 1920.0f, float height = 1080.0f, float angle = 90.0f, float ncp = 0.1f, float fcp = 1000.0f) {
+    void SetProjection(Camera_Projection proj, float width = 1920, float height = 1080.0f, float angle = 45.0f, float ncp = 0.1f, float fcp = 1000.0f) {
         if (proj == PERSP) {
             projection = glm::perspective(angle, width / height, ncp, fcp);
         }
         else if (proj == ORTHO) {
-            projection = glm::ortho(Position.x-10.f, Position.x + 10.f, Position.y  -10.f, Position.y + 10.f, Position.z  -10.f, Position.z + 10.f);
+            projection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, -40.0f, 60.f);
         }
     }
 
@@ -97,6 +99,10 @@ public:
             Position -= Right * velocity;
         if (direction == RIGHT)
             Position += Right * velocity;
+        if (direction == DOWN)
+            Position -= Up * velocity;
+        if (direction == UP)
+            Position += Up * velocity;
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -127,6 +133,23 @@ public:
         Yaw = YAW;
         Pitch = PITCH;
         updateCameraVectors();
+    }
+
+    void CameraKeyboard(unsigned char key, int mod, float delta) {
+        mod = glutGetModifiers();
+
+        if (mod == GLUT_ACTIVE_SHIFT)
+            ProcessKeyboard(UP, delta);
+        if (mod == GLUT_ACTIVE_CTRL)
+            ProcessKeyboard(DOWN, delta);
+        if (key == 'w')
+            ProcessKeyboard(FORWARD, delta);
+        if (key == 's')
+            ProcessKeyboard(BACKWARD, delta);
+        if (key == 'a')
+            ProcessKeyboard(LEFT, delta);
+        if (key == 'd')
+            ProcessKeyboard(RIGHT, delta);
     }
 
 private:
