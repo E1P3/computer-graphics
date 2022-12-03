@@ -18,6 +18,7 @@
 
 // Project includes
 #include "Camera.h"
+#include "Cubemap.h"
 #include "Model.h"
 #include "Mesh.h"
 #include "shader.h"
@@ -37,35 +38,18 @@ SHADERS
 #define PFS_NAME			"../Graphics/Shaders/simpleFragmentShader.frag"
 #define PVS_TN				"../Graphics/Shaders/vShaderTN.vert"
 #define PFS_TN				"../Graphics/Shaders/fShaderTN.frag"
-#define PVS_LIGHT_NAME		"../Graphics/Shaders/light.vert"
-#define PFS_LIGHT_NAME		"../Graphics/Shaders/light.frag"
-#define PVS_SHADOW			"../Graphics/shadow_mapping_vs.vert"
-#define PFS_SHADOW			"../Graphics/shadow_mapping_fs.frag"
-#define PVS_SHADOW_DEPTH	"../Graphics/shadow_mapping_depth.vert"
-#define PFS_SHADOW_DEPTH	"../Graphics/shadow_mapping_depth.frag"
+#define PVS_SHADOW			"../Graphics/Shaders/shadow_mapping_vs.vert"
+#define PFS_SHADOW			"../Graphics/Shaders/shadow_mapping_fs.frag"
+#define PVS_SHADOW_DEPTH	"../Graphics/Shaders/shadow_mapping_depth.vert"
+#define PFS_SHADOW_DEPTH	"../Graphics/Shaders/shadow_mapping_depth.frag"
+#define PVS_SKYBOX			"../Graphics/Shaders/skybox.vert"
+#define PFS_SKYBOX			"../Graphics/Shaders/skybox.frag"
 
 /*----------------------------------------------------------------------------
 MESHES
 ----------------------------------------------------------------------------*/
-
-#define MESH_MONKEY			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/monkeyhead_smooth.dae"
-#define MESH_PLANE			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/plane.dae"
-#define MESH_AK				"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ak.obj"
-#define MESH_BUILDING		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/building.dae"
-#define MESH_DUDE			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/dude.dae"
-#define MESH_CS				"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/terroristo.dae"
-#define MESH_DEER			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/deer.dae"
-#define MESH_BATEMAN		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/juunioor.dae"
-#define MESH_PENG			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/pengo.dae"
-#define MESH_SPHERE			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/sphere.dae"
-#define MESH_DEFAULT		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/default_sphere.dae"
-#define MESH_HEAD			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/snowmanHead.dae"
-#define MESH_BRANCH			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/branch.dae"
-#define MESH_VAMPIRE		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/vamp/vampire.dae"
-#define MESH_CYBORG			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/cyborg/cyborg.obj"
-#define MESH_SNOWBALL		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/snowball/snowball.obj"
-#define MESH_NANOSUIT		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/nanosuit/nanosuit.obj"
-#define MESH_TERRAIN		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/terrain/terrain.obj"
+#define MESH_DEFAULT		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/default.dae"
+#define MESH_BATEMAN		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/bateman.dae"
 #define MESH_PLACEHOLDER    "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/map.dae"
 /*----------------------------------------------------------------------------
 ----------------------------------------------------------------------------*/
@@ -75,10 +59,10 @@ Camera player_camera = Camera();
 Camera light_view = Camera();
 
 ShadowMapFBO shadow_fbo;
+Cubemap skybox;
+Shader lightShader, shadowShader, debugShader, skyboxShader;
 
-Shader lightShader, shadowShader, debugShader, showLightShader;
-
-glm::mat4 lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, -40.0f, 60.f);
+glm::mat4 lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, -60.0f, 60.f);
 glm::vec3 lightPosition = glm::vec3(-1.0f,0.0f,0.0f);
 glm::vec3 origin = glm::vec3(0.0f);
 glm::mat4 lightSpaceMatrix;
@@ -101,7 +85,7 @@ int height = 1080;
 int shadowrez = 16000;
 float maxCount = 10;
 float counter = 0;
-float shadowBias = 0.001f;
+float shadowBias = 0.0000001f;
 float shadowScale = 0.1f;
 
 float delta_X = width / 2.0f;
@@ -186,6 +170,14 @@ void ShadowPass() {
 	}
 }
 
+void SkyPass() {
+	skyboxShader.Use();
+	glm::mat4 view = glm::mat4(glm::mat3(player_camera.GetViewMatrix()));
+	skyboxShader.SetMatrix4("view", view, false);
+	skyboxShader.SetMatrix4("proj", player_camera.GetProjection(), false);
+	skybox.Draw();
+}
+
 void LightPass() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, width, height);
@@ -201,14 +193,9 @@ void LightPass() {
 	lightShader.SetVector3f("viewPos", player_camera.Position, false);
 	lightShader.SetFloat("biasFactor", shadowBias ,false);
 	lightShader.SetMatrix4("lightSpaceMatrix", lightSpaceMatrix, false);
+
 	for (int i = 0; i < Objects.size(); i++) {
-		if (!Objects[i].isLight) {
-			Objects[i].Draw(&lightShader);
-		}
-		else {
-			Objects[i].Draw(&showLightShader);
-		}
-			
+		Objects[i].Draw(&lightShader);
 	}
 }
 
@@ -231,8 +218,9 @@ void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//std::cout << "CAMERA: " << player_camera.Position.x << ", " << player_camera.Position.y << ", " << player_camera.Position.z << ", YAW: " << player_camera.Yaw << " PITCH: " << player_camera.Pitch << "\n";
+	if (!isDebug)
+		counter += delta;
 
-	counter += delta;
 	if (counter > maxCount)
 		counter = 0;
 
@@ -248,6 +236,11 @@ void display() {
 	glCullFace(GL_BACK);
 	glDisable(GL_CULL_FACE);
 
+	LightPass();
+	if(isDepthMap)
+		Debug();
+	SkyPass();
+	glutSwapBuffers();
 
 	//local1 = glm::mat4(1.0f);
 	//local1 = glm::rotate(sin(counter) * 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * local1;
@@ -274,17 +267,12 @@ void display() {
 	//local3 = glm::rotate(-90.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * glm::rotate(270.0f, glm::vec3(0.0f, 0.0f, 1.0f)) * glm::rotate(sin(counter) * 10.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * local3;
 	//local3 = glm::translate(0.0f, 1.5f, 0.0f) * local3;
 	//Snowman.head.transform = local1 * local2 * local3 * glm::scale(0.4f, 0.4f, 0.4f);
-
-	LightPass();
-	if(isDepthMap)
-		Debug();
-
-	glutSwapBuffers();
 }
 
 
 
 void updateScene() {
+	
 	static DWORD last_time = 0;
 	DWORD curr_time = timeGetTime();
 	if (last_time == 0)
@@ -298,51 +286,31 @@ void updateScene() {
 
 void init()
 {
+	skyboxShader = Shader(PVS_SKYBOX, PFS_SKYBOX);
 	lightShader = Shader(PVS_SHADOW, PFS_SHADOW);
-	showLightShader = Shader(PVS_LIGHT_NAME, PFS_LIGHT_NAME);
-	//lightShader = Shader(PVS_NAME, PFS_NAME);
 	shadowShader = Shader(PVS_SHADOW_DEPTH, PFS_SHADOW_DEPTH);
 	debugShader = Shader(PVS_DEBUG, PFS_DEBUG);
+
 	shadow_fbo.Init(shadowrez, shadowrez, false);
+
 	player_camera.SetProjection(PERSP);
-	light_view = Camera(6.15f, 5.0f, 3.93f, 0.0f, 1.0f, 1.0f, -121, -58);
-	light_view.SetProjection(ORTHO);
 
-	shadow_light = GameObject(MESH_DEFAULT);
-	shadow_light.isLight = true;
-	Objects.push_back(shadow_light);
-	//default_sphere.Move(-10.f, 0.0f, 0.0f);
+	skybox = Cubemap(
+		vector<std::string>
+		{
+			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_right.bmp",
+			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_left.bmp",
+			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_top.bmp",
+			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_bottom.bmp",
+			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_front.bmp",
+			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_back.bmp"
+		});
 
-	//sphere = GameObject(MESH_SPHERE, PVS_NAME, PFS_NAME);
-	//sphere.Move(5.0f, 5.0f, 5.0f);
 	character = GameObject(MESH_PLACEHOLDER);
 	character.Rotate(270.f, 0.0f, 0.0f);
 	Objects.push_back(character);
-
-
 	bateman = GameObject(MESH_BATEMAN);
-	bateman.Scale(5.f, 5.f, 5.f);
-	bateman.Move(5.f, 0.f, 0.0f);
 	Objects.push_back(bateman);
-	//Snowman.base = GameObject(MESH_SPHERE);
-	//Snowman.arm = GameObject(MESH_SPHERE);
-	//Snowman.head = GameObject(MESH_HEAD);
-	//Snowman.branch_left = GameObject(MESH_BRANCH);
-	//Snowman.branch_right = GameObject(MESH_BRANCH);
-	//Objects.push_back(Snowman.base);
-	//Objects.push_back(Snowman.arm);
-	//Objects.push_back(Snowman.head);
-	//Objects.push_back(Snowman.branch_left);
-	//Objects.push_back(Snowman.branch_right);
-
-	//light = GameObject(MESH_SPHERE, PVS_LIGHT_NAME, PFS_LIGHT_NAME);
-	//light.Scale(0.1f, 0.1f, 0.1f);
-	//light.Move(1.0f, 5.0f, 5.0f);
-
-	//terrain = GameObject(MESH_TERRAIN);
-	//terrain.Scale(10.0f, 10.0f, 10.0f);
-	//terrain.Move(0.0f, -2.0f, 0.0f);
-	//Objects.push_back(terrain);
 
 	//for (int i = 0; i < 10; i++) {
 	//	spheres[i] = GameObject(MESH_SPHERE);
@@ -366,12 +334,7 @@ void mouseMove(int x, int y) {
 	delta_X = x;
 	delta_Y = y;
 
-	if (isDebug) {
-		light_view.ProcessMouseMovement(xoffset, yoffset);
-	}
-	else {
-		player_camera.ProcessMouseMovement(xoffset, yoffset);
-	}
+	player_camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
 void mouseButton(int button, int state, int x, int y) {
@@ -389,16 +352,16 @@ void arrowKeyes(int key, int x, int y) {
 	switch (key)
 	{
 	case GLUT_KEY_UP:
-		light_view.Position.x += 0.5f;
+
 		break;
 	case GLUT_KEY_DOWN:
-		light_view.Position.x -= 0.5f;
+
 		break;
 	case GLUT_KEY_LEFT:
-		light_view.Position.y -= 0.5f;
+
 		break;
 	case GLUT_KEY_RIGHT:
-		light_view.Position.y += 0.5f;
+
 
 		break;
 	}
@@ -408,12 +371,8 @@ void keypress(unsigned char key, int x, int y) {
 
 	int mod = glutGetModifiers();
 
-	if (isDebug) {
-		light_view.CameraKeyboard(key, mod, delta);
-	}
-	else {
-		player_camera.CameraKeyboard(key,mod, delta);
-	}
+
+	player_camera.CameraKeyboard(key,mod, delta);
 
 	if (key == 'r')
 		player_camera.Reset();
