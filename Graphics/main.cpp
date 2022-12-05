@@ -1,9 +1,12 @@
 // Windows includes (For Time, IO, etc.)
 #include <windows.h>
 #include <mmsystem.h>
+#include <ctime>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <vector> // STL dynamic memory.
 
@@ -27,6 +30,32 @@
 #include "Animation.h"
 #include "Animator.h"
 
+
+//local1 = glm::mat4(1.0f);
+//local1 = glm::rotate(sin(counter) * 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * local1;
+//local1 = glm::translate(0.0f, 1.0f, 0.0f) * local1;
+//Snowman.base.transform = local1 * glm::scale(1.5f, 1.5f, 1.5f);
+
+//local2 = glm::mat4(1.0f);
+//local2 = glm::rotate(sin(counter) * 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * local2;
+//local2 = glm::translate(0.0f, 1.5f, 0.0f) * local2;
+//Snowman.arm.transform = local1 * local2 * glm::scale(1.2f, 1.2f, 1.2f);;
+
+//local21 = glm::mat4(1.0f);
+//local21 = glm::rotate(90.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(-sin(counter) * 40.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * local21;
+//local21 = glm::translate(1.0f, 0.5f, 0.0f) * local21;
+//Snowman.branch_right.transform = local1 * local2 * local21 * glm::scale(0.2f, 0.2f, 0.2f);
+
+//local22 = glm::mat4(1.0f);
+//local22 = glm::rotate(270.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(sin(counter) * 40.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * local22;
+//local22 = glm::translate(-1.0f, 0.5f, 0.0f) * local22;
+//Snowman.branch_left.transform = local1 * local2 * local22 * glm::scale(0.2f, 0.2f, 0.2f);
+
+
+//local3 = glm::mat4(1.0f);
+//local3 = glm::rotate(-90.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * glm::rotate(270.0f, glm::vec3(0.0f, 0.0f, 1.0f)) * glm::rotate(sin(counter) * 10.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * local3;
+//local3 = glm::translate(0.0f, 1.5f, 0.0f) * local3;
+//Snowman.head.transform = local1 * local2 * local3 * glm::scale(0.4f, 0.4f, 0.4f);
 
 // laptop dir C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes
 
@@ -69,23 +98,32 @@ Animation penguin_walk;
 Animator animator;
 
 glm::mat4 lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, -60.0f, 60.f);
+glm::mat4 lightSpaceMatrix;
 glm::vec3 lightPosition = glm::vec3(-1.0f,0.0f,0.0f);
 glm::vec3 origin = glm::vec3(0.0f);
-glm::mat4 lightSpaceMatrix;
+glm::vec3 centre = glm::vec3(-17.0f,0.0f,9.0f);
 
 bool isDebug = false;
 bool isDepthMap = false;
 bool isDay = true;
 
 GameObject terrain, light, sphere, character, bateman, default_sphere, shadow_light;
-GameObject spheres[10];
+
 std::vector<GameObject> Objects;
+std::vector<glm::vec3*> Positions;
+
 bool firstMouse = true;
+bool moveForward = false;
+bool moveBackward = false;
+bool printPos = true;
 
 int width = 1920;
 int height = 1080;
 int shadowrez = 16000;
-float speed=1;
+int numPointLights = 4;
+
+float offset = 2.0f;
+float speed=5;
 float maxCount = 10;
 float counter = 0;
 float direction = 0.f;
@@ -162,9 +200,9 @@ void ShadowPass() {
 }
 
 void SkyPass(float ratio) {
-	skyboxShader.Use();
 	glm::mat4 view = glm::mat4(glm::mat3(player_camera.GetViewMatrix()));
 
+	skyboxShader.Use();
 	skyboxShader.SetFloat("ratio", ratio, false);
 	skyboxShader.SetMatrix4("view", view, false);
 	skyboxShader.SetMatrix4("proj", player_camera.GetProjection(), false);
@@ -240,8 +278,6 @@ void display() {
 	else
 		ratio = 1;
 
-	animator.UpdateAnimation(delta*speed);
-
 	lightPosition = glm::vec3(cos(radAngle), sin(radAngle), 0.0f);
 	glm::mat4 lightView = glm::lookAt(lightPosition, origin, glm::vec3(0.0f, 1.0f, 0.0f));
 	lightSpaceMatrix = lightProjection * lightView;
@@ -256,36 +292,11 @@ void display() {
 		Debug();
 
 	SkyPass(ratio);
+
+	//cout << " POS: " << Objects[1].position.x << " , " << Objects[1].position.y << " , " << Objects[1].position.z << "\n";
+
 	glutSwapBuffers();
-
-	//local1 = glm::mat4(1.0f);
-	//local1 = glm::rotate(sin(counter) * 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * local1;
-	//local1 = glm::translate(0.0f, 1.0f, 0.0f) * local1;
-	//Snowman.base.transform = local1 * glm::scale(1.5f, 1.5f, 1.5f);
-
-	//local2 = glm::mat4(1.0f);
-	//local2 = glm::rotate(sin(counter) * 20.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * local2;
-	//local2 = glm::translate(0.0f, 1.5f, 0.0f) * local2;
-	//Snowman.arm.transform = local1 * local2 * glm::scale(1.2f, 1.2f, 1.2f);;
-
-	//local21 = glm::mat4(1.0f);
-	//local21 = glm::rotate(90.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(-sin(counter) * 40.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * local21;
-	//local21 = glm::translate(1.0f, 0.5f, 0.0f) * local21;
-	//Snowman.branch_right.transform = local1 * local2 * local21 * glm::scale(0.2f, 0.2f, 0.2f);
-
-	//local22 = glm::mat4(1.0f);
-	//local22 = glm::rotate(270.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(sin(counter) * 40.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * local22;
-	//local22 = glm::translate(-1.0f, 0.5f, 0.0f) * local22;
-	//Snowman.branch_left.transform = local1 * local2 * local22 * glm::scale(0.2f, 0.2f, 0.2f);
-
-
-	//local3 = glm::mat4(1.0f);
-	//local3 = glm::rotate(-90.0f, glm::vec3(1.0f, 0.0f, 0.0f)) * glm::rotate(270.0f, glm::vec3(0.0f, 0.0f, 1.0f)) * glm::rotate(sin(counter) * 10.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * local3;
-	//local3 = glm::translate(0.0f, 1.5f, 0.0f) * local3;
-	//Snowman.head.transform = local1 * local2 * local3 * glm::scale(0.4f, 0.4f, 0.4f);
 }
-
-
 
 void updateScene() {
 	
@@ -296,48 +307,55 @@ void updateScene() {
 	delta = (curr_time - last_time) * 0.001f;
 	last_time = curr_time;
 
+	if (moveForward) {
+		Objects[1].updateVelocity(Objects[1].direction * speed);
+		moveForward = false;
+	}
+	if (moveBackward) {
+		Objects[1].updateVelocity(Objects[1].direction * -speed);
+		moveBackward = false;
+	}
+
+	for (int i = 2; i < Objects.size(); i++) {
+		float dist = Objects[i].distanceTo(Objects[1].position);
+		Objects[i].aimToPoint(Objects[1].position, min(2 * offset, dist) - offset);
+		for (int j = 2; j < Objects.size(); j++) {
+			dist = Objects[i].distanceTo(Objects[j].position);
+			if (dist < offset)
+				Objects[i].aimToPoint(Objects[j].position, dist - offset);
+		}
+	}
+
+	for (int i = 0; i < Objects.size(); i++) {
+		if (Objects[i].isAnimatied)
+			Objects[i].animator.UpdateAnimation(delta * glm::length(Objects[i].velocity * 5.0f));
+	}
+
+	for (int i = 1; i < Objects.size(); i++) {
+		if (printPos)
+			cout << "Object " << i << " : " << Objects[i].position.x << " , " << Objects[i].position.y << " , " << Objects[i].position.z << "\n";
+		Objects[i].Step(delta);
+	}
+
+	printPos = false;
+
 	// Draw the next frame
 	glutPostRedisplay();
 }
 
 void loadLights() {
 
-	// point light 1
-	lightShader.SetVector3f("pointLights[0].position", pointLightPositions[0], true);
-	lightShader.SetVector3f("pointLights[0].ambient", 0.05f, 0.05f, 0.05f, true);
-	lightShader.SetVector3f("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f, true);
-	lightShader.SetVector3f("pointLights[0].specular", 1.0f, 1.0f, 1.0f, true);
-	lightShader.SetFloat("pointLights[0].constant", 1.0f, true);
-	lightShader.SetFloat("pointLights[0].linear", 0.09f, true);
-	lightShader.SetFloat("pointLights[0].quadratic", 0.032f, true);
-	lightShader.SetFloat("pointLights[0].strength", 0.25f, true);
-	// point light 2
-	lightShader.SetVector3f("pointLights[1].position", pointLightPositions[1], true);
-	lightShader.SetVector3f("pointLights[1].ambient", 0.05f, 0.05f, 0.05f, true);
-	lightShader.SetVector3f("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f, true);
-	lightShader.SetVector3f("pointLights[1].specular", 1.0f, 1.0f, 1.0f, true);
-	lightShader.SetFloat("pointLights[1].constant", 1.0f, true);
-	lightShader.SetFloat("pointLights[1].linear", 0.09f, true);
-	lightShader.SetFloat("pointLights[1].quadratic", 0.032f, true);
-	lightShader.SetFloat("pointLights[1].strength", 0.25f, true);
-	// point light 3
-	lightShader.SetVector3f("pointLights[2].position", pointLightPositions[2], true);
-	lightShader.SetVector3f("pointLights[2].ambient", 0.05f, 0.05f, 0.05f, true);
-	lightShader.SetVector3f("pointLights[2].diffuse", 0.8f, 0.8f, 0.8f, true);
-	lightShader.SetVector3f("pointLights[2].specular", 1.0f, 1.0f, 1.0f, true);
-	lightShader.SetFloat("pointLights[2].constant", 1.0f, true);
-	lightShader.SetFloat("pointLights[2].linear", 0.09f, true);
-	lightShader.SetFloat("pointLights[2].quadratic", 0.032f, true);
-	lightShader.SetFloat("pointLights[2].strength", 0.50f, true);
-	// point light 4
-	lightShader.SetVector3f("pointLights[3].position", pointLightPositions[3], true);
-	lightShader.SetVector3f("pointLights[3].ambient", 0.05f, 0.05f, 0.05f, true);
-	lightShader.SetVector3f("pointLights[3].diffuse", 0.8f, 0.8f, 0.8f, true);
-	lightShader.SetVector3f("pointLights[3].specular", 1.0f, 1.0f, 1.0f, true);
-	lightShader.SetFloat("pointLights[3].constant", 1.0f, true);
-	lightShader.SetFloat("pointLights[3].linear", 0.09f, true);
-	lightShader.SetFloat("pointLights[3].quadratic", 0.032f, true);
-	lightShader.SetFloat("pointLights[3].strength", 0.25f, true);
+	for (int i = 0; i < numPointLights; i++) {
+
+		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].position", pointLightPositions[i], true);
+		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].ambient", 0.05f, 0.05f, 0.05f, true);
+		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].diffuse", 0.8f, 0.8f, 0.8f, true);
+		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].specular", 1.0f, 1.0f, 1.0f, true);
+		lightShader.SetFloat("pointLights[" + std::to_string(i) + "].constant", 1.0f, true);
+		lightShader.SetFloat("pointLights[" + std::to_string(i) + "].linear", 0.09f, true);
+		lightShader.SetFloat("pointLights[" + std::to_string(i) + "].quadratic", 0.032f, true);
+		lightShader.SetFloat("pointLights[" + std::to_string(i) + "].strength", 0.25f, true);
+	}
 
 }
 
@@ -386,25 +404,38 @@ void init()
 	character.Rotate(270.f, 0.0f, 0.0f);
 	Objects.push_back(character);
 	bateman = GameObject(MESH_PLACEHOLDER);
-	bateman.Rotate(0.0f, 0.0f, 0.0f);
 	bateman.Scale(0.025f, 0.025f, 0.025f);
+	bateman.Move(centre.x, centre.y, centre.z);
 	
 	penguin_walk = Animation(MESH_PLACEHOLDER, &bateman.model);
-	animator = Animator(&penguin_walk);
 
-	bateman.setAnimator(&animator);
+	bateman.setAnimation(&penguin_walk);
 	bateman.isAnimatied = true;
 	Objects.push_back(bateman);
 
 	loadLights();
 
-	//for (int i = 0; i < 10; i++) {
-	//	spheres[i] = GameObject(MESH_SPHERE);
-	//	spheres[i].Move(cubePositions[i].x * 4, cubePositions[i].y * 2 + 5, cubePositions[i].z);
-	//	spheres[i].Scale(cubePositions[i].x, cubePositions[i].x, cubePositions[i].x);
-	//	Objects.push_back(spheres[i]);
-	//}
+	for (int i = 0; i < 10; i++) {
+		GameObject pengo = GameObject(MESH_PLACEHOLDER);
+		pengo.Move(cubePositions[i].x * 4, 0.0f,  cubePositions[i].y * 2 + 5);
+		pengo.Scale(0.025f, 0.025f, 0.025f);
+		pengo.setAnimation(&penguin_walk);
+		pengo.isAnimatied = true;
+		Objects.push_back(pengo);
+	}
 
+	for (int i = 0; i < 10; i++) {
+		GameObject pengo = GameObject(MESH_PLACEHOLDER);
+		pengo.Move(i, 0.0f, i);
+		pengo.Scale(0.025f, 0.025f, 0.025f);
+		pengo.setAnimation(&penguin_walk);
+		pengo.isAnimatied = true;
+		Objects.push_back(pengo);
+	}
+
+	for (int i = 1; i < Objects.size(); i++) {
+		Positions.push_back(&Objects[i].position);
+	}
 }
 
 void mouseMove(int x, int y) {
@@ -439,18 +470,22 @@ void arrowKeyes(int key, int x, int y) {
 	switch (key)
 	{
 	case GLUT_KEY_UP:
-		Objects[1].Move(sin(direction / 360 * 2 * 3.1415) * delta * speed, 0.0f, cos(direction / 360 * 2 * 3.1415) * delta * speed);
+		moveForward = true;
 		break;
 	case GLUT_KEY_DOWN:
-		Objects[1].Move(-sin(direction / 360 * 2 * 3.1415) * delta * speed, 0.0f ,-cos(direction / 360 * 2 * 3.1415) * delta * speed);
+		moveBackward = true;
 		break;
 	case GLUT_KEY_LEFT:
-		direction += 12.0f;
-		Objects[1].Rotate(0.0f, 12.5f, 0.0f);
+		direction += 11.25f;
+		if (direction > 360)
+			direction -= 360;
+		Objects[1].setDirection(direction, DEG);
 		break;
 	case GLUT_KEY_RIGHT:
-		direction -= 12.0f;
-		Objects[1].Rotate(0.0f, -12.5f, 0.0f);
+		direction -= 11.25f;
+		if (direction < -360)
+			direction += 360;
+		Objects[1].setDirection(direction, DEG);
 		break;
 	}
 }
@@ -463,15 +498,18 @@ void keypress(unsigned char key, int x, int y) {
 
 	if (key == 'r')
 		player_camera.Reset();
-
 	if (key == 'o')
 		isDebug = !isDebug;
 	if (key == 'p')
 		isDepthMap = !isDepthMap;
+	if (key == 'm') {
+		printPos = true;
+	}
 	if (key == 't') {
 		speed *= 10;
 		cout << "speed: " << speed << "\n";
 	}
+
 	if (key == 'g') {
 		speed /= 10;
 		cout << "speed: " << speed << "\n";
@@ -493,6 +531,8 @@ int main(int argc, char** argv) {
 	glutMotionFunc(mouseMove);
 	glutSpecialFunc(arrowKeyes);
 	glutMouseFunc(mouseButton);
+
+	srand(static_cast <unsigned> (time(0)));
 
 	// A call to glewInit() must be done after glut is initialized!
 	GLenum res = glewInit();

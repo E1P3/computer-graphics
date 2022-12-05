@@ -84,6 +84,7 @@ float ShadowCalculation(vec4 fragment_position_light_space, vec3 direction)
 
 vec3 getDirLight(DirLight light, vec3 normal, vec3 viewDir)
 {
+    //vec3 lightColor = vec3(0.5, 0.88, 1.0);
     vec3 lightColor = vec3(1.0);
     vec3 lightDir = normalize(light.direction);
 
