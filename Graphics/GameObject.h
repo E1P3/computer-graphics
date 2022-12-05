@@ -14,11 +14,14 @@
 #include "Camera.h"
 #include "shader.h"
 #include "Model.h"
+#include "Animator.h"
 
 class GameObject {
 	
 public:
 	Model model;
+	Animator* animator = NULL;
+	bool  isAnimatied = false;
 	bool  isLight = false;
 	float PosX = 0.0f;
 	float PosY = 0.0f;
@@ -42,6 +45,15 @@ public:
 
 	void Draw(Shader* shader) {
 		shader->SetMatrix4("model", transform, false);
+		if (isAnimatied) {
+			auto transforms = animator->GetFinalBoneMatrices();
+			for (int i = 0; i < transforms.size(); ++i)
+				shader->SetMatrix4("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i], false);
+			shader->SetInteger("isAnimated", 1, false);
+		}
+		else {
+			shader->SetInteger("isAnimated", 0, false);
+		}
 		model.Draw(shader->ID);
 	}
 
@@ -92,6 +104,10 @@ public:
 		transform = glm::rotate(transform, RotY, glm::vec3(0.0f, 1.0f, 0.0f));
 		transform = glm::rotate(transform, RotZ, glm::vec3(0.0f, 0.0f, 1.0f));
 		transform *= scaleMatrix;
+	}
+
+	void setAnimator(Animator* animator) {
+		this->animator = animator;
 	}
 
 };

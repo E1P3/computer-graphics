@@ -24,6 +24,8 @@
 #include "shader.h"
 #include "GameObject.h"
 #include "ShadowMapFBO.h"
+#include "Animation.h"
+#include "Animator.h"
 
 
 // laptop dir C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes
@@ -50,7 +52,8 @@ MESHES
 ----------------------------------------------------------------------------*/
 #define MESH_DEFAULT		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/default.dae"
 #define MESH_BATEMAN		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/bateman.dae"
-#define MESH_PLACEHOLDER    "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/map.dae"
+#define MESH_MAP			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/map.dae"
+#define MESH_PLACEHOLDER    "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/penguin.dae"
 /*----------------------------------------------------------------------------
 ----------------------------------------------------------------------------*/
 
@@ -62,6 +65,9 @@ ShadowMapFBO shadow_fbo;
 Cubemap skybox;
 Shader lightShader, shadowShader, debugShader, skyboxShader;
 
+Animation penguin_walk;
+Animator animator;
+
 glm::mat4 lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, -60.0f, 60.f);
 glm::vec3 lightPosition = glm::vec3(-1.0f,0.0f,0.0f);
 glm::vec3 origin = glm::vec3(0.0f);
@@ -69,25 +75,21 @@ glm::mat4 lightSpaceMatrix;
 
 bool isDebug = false;
 bool isDepthMap = false;
+bool isDay = true;
 
 GameObject terrain, light, sphere, character, bateman, default_sphere, shadow_light;
 GameObject spheres[10];
 std::vector<GameObject> Objects;
 bool firstMouse = true;
-float delta = 0.0f;
-bool scalex = true;
-bool scaley = true;
-bool scalez = true;
-bool scalexyz = true;
 
 int width = 1920;
 int height = 1080;
 int shadowrez = 16000;
+float speed=1;
 float maxCount = 10;
 float counter = 0;
-float shadowBias = 0.0000001f;
-float shadowScale = 0.1f;
-
+float direction = 0.f;
+float delta = 0.0f;
 float delta_X = width / 2.0f;
 float delta_Y = height / 2.0f;
 
@@ -112,23 +114,12 @@ glm::vec3 cubePositions[] = {
 	   glm::vec3(-1.3f,  1.0f, -1.5f)
 };
 
-//void ShadowPass() {
-//	shadow_fbo.BindForWriting();
-//	glClear(GL_DEPTH_BUFFER_BIT);
-//
-//	m_shadowMapTech.Enable();
-//
-//	Matrix4f World = m_pMesh1->GetWorldMatrix();
-//
-//	Matrix4f LightView;
-//	Vector3f Up(0.0f, 1.0f, 0.0f);
-//	LightView.InitCameraTransform(m_spotLight.WorldPosition, m_spotLight.WorldDirection, Up);
-//
-//	Matrix4f WVP = m_lightPersProjMatrix * LightView * World;
-//	m_shadowMapTech.SetWVP(WVP);
-//
-//	m_pMesh1->Render();
-//}
+glm::vec3 pointLightPositions[] = {
+		glm::vec3(-33.1784f, 0.239569f, 6.61508f),
+		glm::vec3(-27.4434f, 0.205384f, 21.9051f),
+		glm::vec3(-31.4852f, 6.04804f, 14.3013f),
+		glm::vec3(1.76556f, 0.39406f, 2.10703f)
+};
 
 unsigned int quadVAO = 0;
 unsigned int quadVBO;
@@ -170,28 +161,32 @@ void ShadowPass() {
 	}
 }
 
-void SkyPass() {
+void SkyPass(float ratio) {
 	skyboxShader.Use();
 	glm::mat4 view = glm::mat4(glm::mat3(player_camera.GetViewMatrix()));
+
+	skyboxShader.SetFloat("ratio", ratio, false);
 	skyboxShader.SetMatrix4("view", view, false);
 	skyboxShader.SetMatrix4("proj", player_camera.GetProjection(), false);
 	skybox.Draw();
 }
 
-void LightPass() {
+void LightPass(float ratio) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, width, height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	float fraction = 1 - ratio;
+
 	shadow_fbo.BindForReading(GL_TEXTURE0);
 
 	lightShader.Use();
-	lightShader.SetInteger("shadowMap", 0, true);
+	lightShader.SetInteger("shadowMap", 0, false);
 	lightShader.SetMatrix4("proj", player_camera.GetProjection(), false);
 	lightShader.SetMatrix4("view", player_camera.GetViewMatrix(), false);
-	lightShader.SetVector3f("lightPos", lightPosition, false);
+	lightShader.SetVector3f("dirLight.direction", lightPosition, false);
+	lightShader.SetVector3f("dirLight.ambient", 0.1f * fraction, 0.1f * fraction, 0.1f * fraction, false);
 	lightShader.SetVector3f("viewPos", player_camera.Position, false);
-	lightShader.SetFloat("biasFactor", shadowBias ,false);
 	lightShader.SetMatrix4("lightSpaceMatrix", lightSpaceMatrix, false);
 
 	for (int i = 0; i < Objects.size(); i++) {
@@ -218,14 +213,34 @@ void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//std::cout << "CAMERA: " << player_camera.Position.x << ", " << player_camera.Position.y << ", " << player_camera.Position.z << ", YAW: " << player_camera.Yaw << " PITCH: " << player_camera.Pitch << "\n";
+	
 	if (!isDebug)
 		counter += delta;
 
-	if (counter > maxCount)
+	if (counter > maxCount) {
 		counter = 0;
-
+		isDay = !isDay;
+		if (isDay) {
+			lightShader.SetVector3f("dirLight.diffuse", 0.8f, 0.8f, 0.8f, true);
+			lightShader.SetVector3f("dirLight.specular", 0.5f, 0.5f, 0.5f, true);
+		}
+		else {
+			lightShader.SetVector3f("dirLight.diffuse", 0.005f, 0.005f, 0.005f, true);
+			lightShader.SetVector3f("dirLight.specular", 0.1f, 0.1f, 0.1f, true);
+		}
+			
+	}
+	
+	float ratio;
 	float fraction = counter / maxCount;
-	float radAngle = 2 * fraction * 3.1415;
+	float radAngle = fraction * 3.1415;
+
+	if (isDay)
+		ratio = abs(cos(radAngle));
+	else
+		ratio = 1;
+
+	animator.UpdateAnimation(delta*speed);
 
 	lightPosition = glm::vec3(cos(radAngle), sin(radAngle), 0.0f);
 	glm::mat4 lightView = glm::lookAt(lightPosition, origin, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -236,10 +251,11 @@ void display() {
 	glCullFace(GL_BACK);
 	glDisable(GL_CULL_FACE);
 
-	LightPass();
+	LightPass(ratio);
 	if(isDepthMap)
 		Debug();
-	SkyPass();
+
+	SkyPass(ratio);
 	glutSwapBuffers();
 
 	//local1 = glm::mat4(1.0f);
@@ -284,10 +300,59 @@ void updateScene() {
 	glutPostRedisplay();
 }
 
+void loadLights() {
+
+	// point light 1
+	lightShader.SetVector3f("pointLights[0].position", pointLightPositions[0], true);
+	lightShader.SetVector3f("pointLights[0].ambient", 0.05f, 0.05f, 0.05f, true);
+	lightShader.SetVector3f("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f, true);
+	lightShader.SetVector3f("pointLights[0].specular", 1.0f, 1.0f, 1.0f, true);
+	lightShader.SetFloat("pointLights[0].constant", 1.0f, true);
+	lightShader.SetFloat("pointLights[0].linear", 0.09f, true);
+	lightShader.SetFloat("pointLights[0].quadratic", 0.032f, true);
+	lightShader.SetFloat("pointLights[0].strength", 0.25f, true);
+	// point light 2
+	lightShader.SetVector3f("pointLights[1].position", pointLightPositions[1], true);
+	lightShader.SetVector3f("pointLights[1].ambient", 0.05f, 0.05f, 0.05f, true);
+	lightShader.SetVector3f("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f, true);
+	lightShader.SetVector3f("pointLights[1].specular", 1.0f, 1.0f, 1.0f, true);
+	lightShader.SetFloat("pointLights[1].constant", 1.0f, true);
+	lightShader.SetFloat("pointLights[1].linear", 0.09f, true);
+	lightShader.SetFloat("pointLights[1].quadratic", 0.032f, true);
+	lightShader.SetFloat("pointLights[1].strength", 0.25f, true);
+	// point light 3
+	lightShader.SetVector3f("pointLights[2].position", pointLightPositions[2], true);
+	lightShader.SetVector3f("pointLights[2].ambient", 0.05f, 0.05f, 0.05f, true);
+	lightShader.SetVector3f("pointLights[2].diffuse", 0.8f, 0.8f, 0.8f, true);
+	lightShader.SetVector3f("pointLights[2].specular", 1.0f, 1.0f, 1.0f, true);
+	lightShader.SetFloat("pointLights[2].constant", 1.0f, true);
+	lightShader.SetFloat("pointLights[2].linear", 0.09f, true);
+	lightShader.SetFloat("pointLights[2].quadratic", 0.032f, true);
+	lightShader.SetFloat("pointLights[2].strength", 0.50f, true);
+	// point light 4
+	lightShader.SetVector3f("pointLights[3].position", pointLightPositions[3], true);
+	lightShader.SetVector3f("pointLights[3].ambient", 0.05f, 0.05f, 0.05f, true);
+	lightShader.SetVector3f("pointLights[3].diffuse", 0.8f, 0.8f, 0.8f, true);
+	lightShader.SetVector3f("pointLights[3].specular", 1.0f, 1.0f, 1.0f, true);
+	lightShader.SetFloat("pointLights[3].constant", 1.0f, true);
+	lightShader.SetFloat("pointLights[3].linear", 0.09f, true);
+	lightShader.SetFloat("pointLights[3].quadratic", 0.032f, true);
+	lightShader.SetFloat("pointLights[3].strength", 0.25f, true);
+
+}
+
 void init()
 {
 	skyboxShader = Shader(PVS_SKYBOX, PFS_SKYBOX);
+	skyboxShader.SetInteger("day", 0, true);
+	skyboxShader.SetInteger("night", 1, true);
+
 	lightShader = Shader(PVS_SHADOW, PFS_SHADOW);
+	lightShader.SetVector3f("dirLight.ambient", 0.1f, 0.1f, 0.1f, true);
+	lightShader.SetVector3f("dirLight.diffuse", 0.8f, 0.8f, 0.8f, true);
+	lightShader.SetVector3f("dirLight.specular", 0.5f, 0.5f, 0.5f, true);
+
+
 	shadowShader = Shader(PVS_SHADOW_DEPTH, PFS_SHADOW_DEPTH);
 	debugShader = Shader(PVS_DEBUG, PFS_DEBUG);
 
@@ -295,22 +360,43 @@ void init()
 
 	player_camera.SetProjection(PERSP);
 
-	skybox = Cubemap(
-		vector<std::string>
-		{
-			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_right.bmp",
-			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_left.bmp",
-			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_top.bmp",
-			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_bottom.bmp",
-			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_front.bmp",
-			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_back.bmp"
-		});
+	skybox = Cubemap();
+	skybox.loadCubemap(vector<std::string>
+	{
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_right.bmp",
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_left.bmp",
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_top.bmp",
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_bottom.bmp",
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_front.bmp",
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_back.bmp"
+	});
+	skybox.loadCubemap(vector<std::string>
+	{
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_right.png",
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_left.png",
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_top.png",
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_bottom.png",
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_front.png",
+		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_back.png"
+	});
 
-	character = GameObject(MESH_PLACEHOLDER);
+	skybox.setupCubemap();
+	
+	character = GameObject(MESH_MAP);
 	character.Rotate(270.f, 0.0f, 0.0f);
 	Objects.push_back(character);
-	bateman = GameObject(MESH_BATEMAN);
+	bateman = GameObject(MESH_PLACEHOLDER);
+	bateman.Rotate(0.0f, 0.0f, 0.0f);
+	bateman.Scale(0.025f, 0.025f, 0.025f);
+	
+	penguin_walk = Animation(MESH_PLACEHOLDER, &bateman.model);
+	animator = Animator(&penguin_walk);
+
+	bateman.setAnimator(&animator);
+	bateman.isAnimatied = true;
 	Objects.push_back(bateman);
+
+	loadLights();
 
 	//for (int i = 0; i < 10; i++) {
 	//	spheres[i] = GameObject(MESH_SPHERE);
@@ -349,20 +435,22 @@ void mouseButton(int button, int state, int x, int y) {
 }
 
 void arrowKeyes(int key, int x, int y) {
+
 	switch (key)
 	{
 	case GLUT_KEY_UP:
-
+		Objects[1].Move(sin(direction / 360 * 2 * 3.1415) * delta * speed, 0.0f, cos(direction / 360 * 2 * 3.1415) * delta * speed);
 		break;
 	case GLUT_KEY_DOWN:
-
+		Objects[1].Move(-sin(direction / 360 * 2 * 3.1415) * delta * speed, 0.0f ,-cos(direction / 360 * 2 * 3.1415) * delta * speed);
 		break;
 	case GLUT_KEY_LEFT:
-
+		direction += 12.0f;
+		Objects[1].Rotate(0.0f, 12.5f, 0.0f);
 		break;
 	case GLUT_KEY_RIGHT:
-
-
+		direction -= 12.0f;
+		Objects[1].Rotate(0.0f, -12.5f, 0.0f);
 		break;
 	}
 }
@@ -371,37 +459,23 @@ void keypress(unsigned char key, int x, int y) {
 
 	int mod = glutGetModifiers();
 
-
 	player_camera.CameraKeyboard(key,mod, delta);
 
 	if (key == 'r')
 		player_camera.Reset();
-	if (key == 't') {
-		
-		shadowBias += shadowBias;
-		if (shadowBias == 0)
-			shadowBias = 1;
-		cout << "shadowBias: " << shadowBias << "\n";
-	}
-	if (key == 'g') {
-		shadowBias -= shadowBias;
-		if (shadowBias == 0)
-			shadowBias = 1;
-		cout << "shadowBias: " << shadowBias << "\n";
-	}
-	if (key == 'y') {
-		shadowBias /= 0.1f;
-		cout << "shadowBias: " << shadowBias << "\n";
-	}
-	if (key == 'h') {
-		shadowBias *= 0.1f;
-		cout << "shadowBias: " << shadowBias << "\n";
-	}
 
 	if (key == 'o')
 		isDebug = !isDebug;
 	if (key == 'p')
 		isDepthMap = !isDepthMap;
+	if (key == 't') {
+		speed *= 10;
+		cout << "speed: " << speed << "\n";
+	}
+	if (key == 'g') {
+		speed /= 10;
+		cout << "speed: " << speed << "\n";
+	}
 }
 
 int main(int argc, char** argv) {

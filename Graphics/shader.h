@@ -6,6 +6,7 @@
 #include<iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <string>
 
 // USAGE
 // you can either run all steps by assigning Vertex and Fragmant shader with CompileVF or you can getID, add as many shaders as you need with AddShaders, and then CompileAll
@@ -27,59 +28,59 @@ public:
 	}
 
 
-	void SetFloat(const char* name, float value, bool useShader)
+	void SetFloat(const std::string& name, float value, bool useShader)
 	{
 		if (useShader)
 			this->Use();
-		glUniform1f(glGetUniformLocation(this->ID, name), value);
+		glUniform1f(glGetUniformLocation(this->ID, name.c_str()), value);
 	}
-	void SetInteger(const char* name, int value, bool useShader)
+	void SetInteger(const std::string& name, int value, bool useShader)
 	{
 		if (useShader)
 			this->Use();
-		glUniform1i(glGetUniformLocation(this->ID, name), value);
+		glUniform1i(glGetUniformLocation(this->ID, name.c_str()), value);
 	}
-	void SetVector2f(const char* name, float x, float y, bool useShader)
+	void SetVector2f(const std::string& name, float x, float y, bool useShader)
 	{
 		if (useShader)
 			this->Use();
-		glUniform2f(glGetUniformLocation(this->ID, name), x, y);
+		glUniform2f(glGetUniformLocation(this->ID, name.c_str()), x, y);
 	}
-	void SetVector2f(const char* name, const glm::vec2& value, bool useShader)
+	void SetVector2f(const std::string& name, const glm::vec2& value, bool useShader)
 	{
 		if (useShader)
 			this->Use();
-		glUniform2f(glGetUniformLocation(this->ID, name), value.x, value.y);
+		glUniform2f(glGetUniformLocation(this->ID, name.c_str()), value.x, value.y);
 	}
-	void SetVector3f(const char* name, float x, float y, float z, bool useShader)
+	void SetVector3f(const std::string& name, float x, float y, float z, bool useShader)
 	{
 		if (useShader)
 			this->Use();
-		glUniform3f(glGetUniformLocation(this->ID, name), x, y, z);
+		glUniform3f(glGetUniformLocation(this->ID, name.c_str()), x, y, z);
 	}
-	void SetVector3f(const char* name, const glm::vec3& value, bool useShader)
+	void SetVector3f(const std::string& name, const glm::vec3& value, bool useShader)
 	{
 		if (useShader)
 			this->Use();
-		glUniform3f(glGetUniformLocation(this->ID, name), value.x, value.y, value.z);
+		glUniform3f(glGetUniformLocation(this->ID, name.c_str()), value.x, value.y, value.z);
 	}
-	void SetVector4f(const char* name, float x, float y, float z, float w, bool useShader)
+	void SetVector4f(const std::string& name, float x, float y, float z, float w, bool useShader)
 	{
 		if (useShader)
 			this->Use();
-		glUniform4f(glGetUniformLocation(this->ID, name), x, y, z, w);
+		glUniform4f(glGetUniformLocation(this->ID, name.c_str()), x, y, z, w);
 	}
-	void SetVector4f(const char* name, const glm::vec4& value, bool useShader)
+	void SetVector4f(const std::string& name, const glm::vec4& value, bool useShader)
 	{
 		if (useShader)
 			this->Use();
-		glUniform4f(glGetUniformLocation(this->ID, name), value.x, value.y, value.z, value.w);
+		glUniform4f(glGetUniformLocation(this->ID, name.c_str()), value.x, value.y, value.z, value.w);
 	}
-	void SetMatrix4(const char* name, const glm::mat4& matrix, bool useShader)
+	void SetMatrix4(const std::string& name, const glm::mat4& matrix, bool useShader)
 	{
 		if (useShader)
 			this->Use();
-		glUniformMatrix4fv(glGetUniformLocation(this->ID, name), 1, false, &matrix[0][0]);
+		glUniformMatrix4fv(glGetUniformLocation(this->ID, name.c_str()), 1, false, &matrix[0][0]);
 	}
 
 	void Compile(const char* PVS, const char* PFS) {

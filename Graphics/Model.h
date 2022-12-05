@@ -72,7 +72,7 @@ private:
 
 		printf("  %i materials\n", scene->mNumMaterials);
 		printf("  %i meshes\n", scene->mNumMeshes);
-		printf("  %i textures\n", scene->mNumTextures);
+		printf("  %i animations\n", scene->mNumAnimations);
 
 		// process ASSIMP's root node recursively
 		processNode(scene->mRootNode, scene);
@@ -201,7 +201,6 @@ private:
 		}
 	}
 
-
 	void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
 	{
 		auto& boneInfoMap = m_BoneInfoMap;
@@ -224,6 +223,7 @@ private:
 			{
 				boneID = boneInfoMap[boneName].id;
 			}
+
 			assert(boneID != -1);
 			auto weights = mesh->mBones[boneIndex]->mWeights;
 			int numWeights = mesh->mBones[boneIndex]->mNumWeights;
@@ -236,8 +236,9 @@ private:
 				SetVertexBoneData(vertices[vertexId], boneID, weight);
 			}
 		}
-	}
 
+		printf("  %i bones\n", boneCount);
+	}
 
 	unsigned int TextureFromFile(const char* path, const string& directory, bool gamma = false)
 	{
