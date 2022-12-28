@@ -83,6 +83,13 @@ MESHES
 #define MESH_BATEMAN		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/bateman.dae"
 #define MESH_MAP			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/map.dae"
 #define MESH_PLACEHOLDER    "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/penguin.dae"
+#define MESH_ICE_SURFACE_1	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_1/ice_surface_1.obj"
+#define MESH_ICE_SURFACE_2	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_2/ice_surface_2.obj"
+#define MESH_ICE_SURFACE_3	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_3/ice_surface_3.obj"
+#define MESH_ICE_SURFACE_4	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_4/ice_surface_4.obj"
+#define MESH_ICE_SURFACE_5	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_5/ice_surface_5.obj"
+#define MESH_ICE_SURFACE_6	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_6/ice_surface_6.obj"
+#define MESH_ICE_SURFACE_7	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_7/ice_surface_7.obj"
 /*----------------------------------------------------------------------------
 ----------------------------------------------------------------------------*/
 
@@ -115,6 +122,7 @@ bool isDay = true;
 GameObject character, bateman;
 
 std::vector<GameObject> Objects, Penguins;
+std::vector<Model> Models;
 
 bool firstMouse = true;
 bool moveForward = false;
@@ -128,7 +136,7 @@ int height = 1440;
 int shadowrez = 16000;
 int numPointLights = 4;
 int ObjectIndex = 1;
-
+int ModelIndex = 1;
 unsigned int quadVAO = 0;
 unsigned int quadVBO;
 
@@ -432,6 +440,16 @@ void init()
 	penguin = Model(MESH_PLACEHOLDER);
 	iceberg = Model("C:/Users/HOW TO SPOON/Desktop/beans/unsorted/Meshes/iceice/ice1.obj");
 
+	Models.push_back(penguin);
+	Models.push_back(iceberg);
+	Models.push_back(Model(MESH_ICE_SURFACE_1));
+	Models.push_back(Model(MESH_ICE_SURFACE_2));
+	Models.push_back(Model(MESH_ICE_SURFACE_3));
+	Models.push_back(Model(MESH_ICE_SURFACE_4));
+	Models.push_back(Model(MESH_ICE_SURFACE_5));
+	Models.push_back(Model(MESH_ICE_SURFACE_6));
+	Models.push_back(Model(MESH_ICE_SURFACE_7));
+
 	character = GameObject(&game_map);
 	character.Rotate(270.f, 0.0f, 0.0f);
 	Objects.push_back(character);
@@ -562,6 +580,16 @@ void keypress(unsigned char key, int x, int y) {
 			ObjectIndex = Objects.size() - 1;
 			Objects[ObjectIndex].hasNormalMap = true;
 			selected = &Objects[ObjectIndex];
+		}
+		if (key == '[') {
+			if (ModelIndex < Models.size() - 1)
+				ModelIndex++;
+			selected->SwitchModel(&Models[ModelIndex]);
+		}
+		if (key == ']') {
+			if (ModelIndex > 0)
+				ModelIndex--;
+			selected->SwitchModel(&Models[ModelIndex]);
 		}
 	}
 
