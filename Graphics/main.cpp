@@ -67,8 +67,8 @@ SHADERS
 #define PFS_DEBUG			"../Graphics/Shaders/depth_debug.frag"
 #define PVS_NAME			"../Graphics/Shaders/simpleVertexShader.vert"
 #define PFS_NAME			"../Graphics/Shaders/simpleFragmentShader.frag"
-#define PVS_TN				"../Graphics/Shaders/vShaderTN.vert"
-#define PFS_TN				"../Graphics/Shaders/fShaderTN.frag"
+#define PVS_TN				"../Graphics/Shaders/normal.vert"
+#define PFS_TN				"../Graphics/Shaders/normal.frag"
 #define PVS_SHADOW			"../Graphics/Shaders/shadow_mapping_vs.vert"
 #define PFS_SHADOW			"../Graphics/Shaders/shadow_mapping_fs.frag"
 #define PVS_SHADOW_DEPTH	"../Graphics/Shaders/shadow_mapping_depth.vert"
@@ -87,15 +87,19 @@ MESHES
 ----------------------------------------------------------------------------*/
 
 using namespace std;
+
 Camera player_camera = Camera();
-Camera light_view = Camera();
 
 ShadowMapFBO shadow_fbo;
 Cubemap skybox;
-Shader lightShader, shadowShader, debugShader, skyboxShader;
+Shader lightShader, shadowShader, debugShader, skyboxShader, normalShader;
+
+Model penguin, game_map, iceberg;
 
 Animation penguin_walk;
 Animator animator;
+
+GameObject* selected;
 
 glm::mat4 lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, -60.0f, 60.f);
 glm::mat4 lightSpaceMatrix;
@@ -104,23 +108,29 @@ glm::vec3 origin = glm::vec3(0.0f);
 glm::vec3 centre = glm::vec3(-17.0f,0.0f,9.0f);
 
 bool isDebug = false;
+bool isSunRotating = false;
 bool isDepthMap = false;
 bool isDay = true;
 
-GameObject terrain, light, sphere, character, bateman, default_sphere, shadow_light;
+GameObject character, bateman;
 
-std::vector<GameObject> Objects;
-std::vector<glm::vec3*> Positions;
+std::vector<GameObject> Objects, Penguins;
 
 bool firstMouse = true;
 bool moveForward = false;
 bool moveBackward = false;
 bool printPos = true;
 
-int width = 1920;
-int height = 1080;
+//int width = 1920;
+//int height = 1080;
+int width = 3440;
+int height = 1440;
 int shadowrez = 16000;
 int numPointLights = 4;
+int ObjectIndex = 1;
+
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
 
 float offset = 2.0f;
 float speed=5;
@@ -159,8 +169,6 @@ glm::vec3 pointLightPositions[] = {
 		glm::vec3(1.76556f, 0.39406f, 2.10703f)
 };
 
-unsigned int quadVAO = 0;
-unsigned int quadVBO;
 void renderQuad()
 {
 	if (quadVAO == 0)
@@ -197,6 +205,10 @@ void ShadowPass() {
 	for (int i = 0; i < Objects.size(); i++) {
 		Objects[i].Draw(&shadowShader);
 	}
+
+	for (int i = 0; i < Penguins.size(); i++) {
+		Penguins[i].Draw(&shadowShader);
+	}
 }
 
 void SkyPass(float ratio) {
@@ -220,15 +232,21 @@ void LightPass(float ratio) {
 
 	lightShader.Use();
 	lightShader.SetInteger("shadowMap", 0, false);
+	lightShader.SetInteger("texture_diffuse1", 1, false);
+	lightShader.SetInteger("texture_normal1", 2, false);
 	lightShader.SetMatrix4("proj", player_camera.GetProjection(), false);
 	lightShader.SetMatrix4("view", player_camera.GetViewMatrix(), false);
 	lightShader.SetVector3f("dirLight.direction", lightPosition, false);
-	lightShader.SetVector3f("dirLight.ambient", 0.1f * fraction, 0.1f * fraction, 0.1f * fraction, false);
+	lightShader.SetVector3f("dirLight.ambient", 0.9f * fraction, 0.9f * fraction, 0.9f * fraction, false);
 	lightShader.SetVector3f("viewPos", player_camera.Position, false);
 	lightShader.SetMatrix4("lightSpaceMatrix", lightSpaceMatrix, false);
 
 	for (int i = 0; i < Objects.size(); i++) {
 		Objects[i].Draw(&lightShader);
+	}
+
+	for (int i = 0; i < Penguins.size(); i++) {
+		Penguins[i].Draw(&lightShader);
 	}
 }
 
@@ -252,7 +270,7 @@ void display() {
 
 	//std::cout << "CAMERA: " << player_camera.Position.x << ", " << player_camera.Position.y << ", " << player_camera.Position.z << ", YAW: " << player_camera.Yaw << " PITCH: " << player_camera.Pitch << "\n";
 	
-	if (!isDebug)
+	if (!isSunRotating)
 		counter += delta;
 
 	if (counter > maxCount) {
@@ -260,7 +278,7 @@ void display() {
 		isDay = !isDay;
 		if (isDay) {
 			lightShader.SetVector3f("dirLight.diffuse", 0.8f, 0.8f, 0.8f, true);
-			lightShader.SetVector3f("dirLight.specular", 0.5f, 0.5f, 0.5f, true);
+			lightShader.SetVector3f("dirLight.specular", 0.2f, 0.2f, 0.2f, true);
 		}
 		else {
 			lightShader.SetVector3f("dirLight.diffuse", 0.005f, 0.005f, 0.005f, true);
@@ -298,6 +316,33 @@ void display() {
 	glutSwapBuffers();
 }
 
+void updateAnimation() {
+	for (int i = 0; i < Penguins.size(); i++) {
+		if (Penguins[i].isAnimatied)
+			Penguins[i].animator.UpdateAnimation(delta * glm::length(Penguins[i].velocity * 5.0f));
+	}
+}
+
+void updateDirection() {
+	for (int i = 1; i < Penguins.size(); i++) {
+		float dist = Penguins[i].distanceTo(Penguins[0].position);
+		Penguins[i].aimToPoint(Penguins[0].position, min(2 * offset, dist) - offset);
+		for (int j = 1; j < Penguins.size(); j++) {
+			dist = Penguins[i].distanceTo(Penguins[j].position);
+			if (dist < offset)
+				Penguins[i].aimToPoint(Penguins[j].position, dist - offset);
+		}
+	}
+}
+void updateStep() {
+	for (int i = 0; i < Penguins.size(); i++) {
+		if (printPos)
+			cout << "Object " << i << " : " << Penguins[i].position.x << " , " << Penguins[i].position.y << " , " << Penguins[i].position.z << "\n";
+		Penguins[i].Step(delta);
+	}
+	selected->Step(delta);
+}
+
 void updateScene() {
 	
 	static DWORD last_time = 0;
@@ -308,39 +353,23 @@ void updateScene() {
 	last_time = curr_time;
 
 	if (moveForward) {
-		Objects[1].updateVelocity(Objects[1].direction * speed);
+		selected->updateVelocity(selected->direction * speed);
 		moveForward = false;
 	}
 	if (moveBackward) {
-		Objects[1].updateVelocity(Objects[1].direction * -speed);
+		selected->updateVelocity(selected->direction * -speed);
 		moveBackward = false;
 	}
 
-	for (int i = 2; i < Objects.size(); i++) {
-		float dist = Objects[i].distanceTo(Objects[1].position);
-		Objects[i].aimToPoint(Objects[1].position, min(2 * offset, dist) - offset);
-		for (int j = 2; j < Objects.size(); j++) {
-			dist = Objects[i].distanceTo(Objects[j].position);
-			if (dist < offset)
-				Objects[i].aimToPoint(Objects[j].position, dist - offset);
-		}
-	}
-
-	for (int i = 0; i < Objects.size(); i++) {
-		if (Objects[i].isAnimatied)
-			Objects[i].animator.UpdateAnimation(delta * glm::length(Objects[i].velocity * 5.0f));
-	}
-
-	for (int i = 1; i < Objects.size(); i++) {
-		if (printPos)
-			cout << "Object " << i << " : " << Objects[i].position.x << " , " << Objects[i].position.y << " , " << Objects[i].position.z << "\n";
-		Objects[i].Step(delta);
-	}
+	updateDirection();
+	updateAnimation();
+	updateStep();
 
 	printPos = false;
 
 	// Draw the next frame
 	glutPostRedisplay();
+	display();
 }
 
 void loadLights() {
@@ -348,9 +377,9 @@ void loadLights() {
 	for (int i = 0; i < numPointLights; i++) {
 
 		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].position", pointLightPositions[i], true);
-		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].ambient", 0.05f, 0.05f, 0.05f, true);
-		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].diffuse", 0.8f, 0.8f, 0.8f, true);
-		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].specular", 1.0f, 1.0f, 1.0f, true);
+		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].ambient", 0.5f, 0.5f, 0.5f, true);
+		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].diffuse", 0.01f, 0.01f, 0.01f, true);
+		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].specular", 0.22f, 0.22f, 0.22f, true);
 		lightShader.SetFloat("pointLights[" + std::to_string(i) + "].constant", 1.0f, true);
 		lightShader.SetFloat("pointLights[" + std::to_string(i) + "].linear", 0.09f, true);
 		lightShader.SetFloat("pointLights[" + std::to_string(i) + "].quadratic", 0.032f, true);
@@ -365,11 +394,10 @@ void init()
 	skyboxShader.SetInteger("day", 0, true);
 	skyboxShader.SetInteger("night", 1, true);
 
-	lightShader = Shader(PVS_SHADOW, PFS_SHADOW);
+	lightShader = Shader(PVS_TN, PFS_TN);
 	lightShader.SetVector3f("dirLight.ambient", 0.1f, 0.1f, 0.1f, true);
 	lightShader.SetVector3f("dirLight.diffuse", 0.8f, 0.8f, 0.8f, true);
 	lightShader.SetVector3f("dirLight.specular", 0.5f, 0.5f, 0.5f, true);
-
 
 	shadowShader = Shader(PVS_SHADOW_DEPTH, PFS_SHADOW_DEPTH);
 	debugShader = Shader(PVS_DEBUG, PFS_DEBUG);
@@ -400,42 +428,33 @@ void init()
 
 	skybox.setupCubemap();
 	
-	character = GameObject(MESH_MAP);
+	game_map = Model(MESH_MAP);
+	penguin = Model(MESH_PLACEHOLDER);
+	iceberg = Model("C:/Users/HOW TO SPOON/Desktop/beans/unsorted/Meshes/iceice/ice1.obj");
+
+	character = GameObject(&game_map);
 	character.Rotate(270.f, 0.0f, 0.0f);
 	Objects.push_back(character);
-	bateman = GameObject(MESH_PLACEHOLDER);
-	bateman.Scale(0.025f, 0.025f, 0.025f);
-	bateman.Move(centre.x, centre.y, centre.z);
-	
-	penguin_walk = Animation(MESH_PLACEHOLDER, &bateman.model);
 
-	bateman.setAnimation(&penguin_walk);
-	bateman.isAnimatied = true;
-	Objects.push_back(bateman);
+	GameObject ice_berg = GameObject(&iceberg);
+	ice_berg.hasNormalMap = true;
+	Objects.push_back(ice_berg);
+	
+	penguin_walk = Animation(MESH_PLACEHOLDER, &penguin);
 
 	loadLights();
 
 	for (int i = 0; i < 10; i++) {
-		GameObject pengo = GameObject(MESH_PLACEHOLDER);
-		pengo.Move(cubePositions[i].x * 4, 0.0f,  cubePositions[i].y * 2 + 5);
-		pengo.Scale(0.025f, 0.025f, 0.025f);
-		pengo.setAnimation(&penguin_walk);
-		pengo.isAnimatied = true;
-		Objects.push_back(pengo);
-	}
-
-	for (int i = 0; i < 10; i++) {
-		GameObject pengo = GameObject(MESH_PLACEHOLDER);
+		GameObject pengo = GameObject(&penguin);
 		pengo.Move(i, 0.0f, i);
 		pengo.Scale(0.025f, 0.025f, 0.025f);
 		pengo.setAnimation(&penguin_walk);
 		pengo.isAnimatied = true;
-		Objects.push_back(pengo);
+		pengo.hasShadow = false;
+		Penguins.push_back(pengo);
 	}
 
-	for (int i = 1; i < Objects.size(); i++) {
-		Positions.push_back(&Objects[i].position);
-	}
+	selected = &Penguins[0];
 }
 
 void mouseMove(int x, int y) {
@@ -479,15 +498,20 @@ void arrowKeyes(int key, int x, int y) {
 		direction += 11.25f;
 		if (direction > 360)
 			direction -= 360;
-		Objects[1].setDirection(direction, DEG);
+		selected->setDirection(direction, DEG);
 		break;
 	case GLUT_KEY_RIGHT:
 		direction -= 11.25f;
 		if (direction < -360)
 			direction += 360;
-		Objects[1].setDirection(direction, DEG);
+		selected->setDirection(direction, DEG);
 		break;
 	}
+}
+
+void newObject(Model* model) {
+	GameObject new_object = GameObject(model);
+	Objects.push_back(new_object);
 }
 
 void keypress(unsigned char key, int x, int y) {
@@ -499,21 +523,49 @@ void keypress(unsigned char key, int x, int y) {
 	if (key == 'r')
 		player_camera.Reset();
 	if (key == 'o')
-		isDebug = !isDebug;
+		isSunRotating = !isSunRotating;
 	if (key == 'p')
 		isDepthMap = !isDepthMap;
 	if (key == 'm') {
 		printPos = true;
 	}
 	if (key == 't') {
-		speed *= 10;
+		speed *= 2;
 		cout << "speed: " << speed << "\n";
+	}
+	if (key == 'g') {
+		speed /= 2;
+		cout << "speed: " << speed << "\n";
+	}
+	if (key == '`') {
+		isDebug = !isDebug;
+		if (isDebug) {
+			selected = &Objects[ObjectIndex];
+		}
+		else {
+			selected = &Penguins[0];
+		}
+	}
+	if (isDebug) {
+		if (key == ',') {
+			if (ObjectIndex < Objects.size() - 1)
+				ObjectIndex++;
+			selected = &Objects[ObjectIndex];
+		}
+		if (key == '.') {
+			if (ObjectIndex > 0)
+				ObjectIndex--;
+			selected = &Objects[ObjectIndex];
+		}
+		if (key == 'n') {
+			newObject(&iceberg);
+			ObjectIndex = Objects.size() - 1;
+			Objects[ObjectIndex].hasNormalMap = true;
+			selected = &Objects[ObjectIndex];
+		}
 	}
 
-	if (key == 'g') {
-		speed /= 10;
-		cout << "speed: " << speed << "\n";
-	}
+	
 }
 
 int main(int argc, char** argv) {

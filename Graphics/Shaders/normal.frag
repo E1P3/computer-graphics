@@ -26,8 +26,11 @@ struct DirLight {
 in VERTEX {
     vec3 fragment_position;
     vec3 normal;
+    vec3 tangent;
+    vec3 bitangent;
     vec2 uv;
     vec4 fragment_position_light_space;
+    mat3 TBN;
 } vertex;
 
 uniform DirLight dirLight;
@@ -39,11 +42,19 @@ uniform sampler2D shadowMap;
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_normal1;
 
+
 uniform vec3 dirLightPos;
 uniform vec3 viewPos;
 
+uniform int hasNormalMap;
+uniform int hasShadow;
+
 float ShadowCalculation(vec4 fragment_position_light_space, vec3 direction)
 {
+    if(hasShadow == 0){
+        return 0;
+    }
+
     // perform perspective divide
     vec3 projCoords = fragment_position_light_space.xyz / fragment_position_light_space.w;
 
@@ -89,6 +100,10 @@ vec3 getDirLight(DirLight light, vec3 normal, vec3 viewDir)
     vec3 lightColor = vec3(1.0);
     vec3 lightDir = normalize(light.direction);
 
+    //if(hasNormalMap == 1){
+    //    lightDir = vertex.TBN * lightDir;
+    //}
+
     float diff = max(dot(lightDir, normal), 0.0);
 
     vec3 reflectDir = reflect(-lightDir, normal);
@@ -108,8 +123,12 @@ vec3 getDirLight(DirLight light, vec3 normal, vec3 viewDir)
 
 vec3 getPointLight(PointLight light, vec3 normal, vec3 fragment_position, vec3 viewDir)
 {
-    vec3 lightColor = vec3(light.strength) * vec3(1.0,0.0,0.0);
+    vec3 lightColor = vec3(light.strength) * vec3(0.0,0.9,1.0);
     vec3 lightDir = normalize(light.position - fragment_position);
+
+    //if(hasNormalMap == 1){
+    //    lightDir = vertex.TBN * lightDir;
+    //}
 
     float diff = max(dot(normal, lightDir), 0.0);
 
@@ -131,11 +150,25 @@ vec3 getPointLight(PointLight light, vec3 normal, vec3 fragment_position, vec3 v
     return (ambient + diffuse + specular);
 }
 
+vec3 CalculateNormal(){
+    if(hasNormalMap == 1){
+        vec3 normal = texture(texture_normal1, vertex.uv).xyz;
+        normal = normalize(normal * 2.0 - 1.0);
+        normal = normalize(vertex.TBN * normal) * 0.5;
+        return normal;
+    }
+    return normalize(vertex.normal);
+}
+
 void main()
 {           
     vec3 color = texture(texture_diffuse1, vertex.uv).rgb;
-    vec3 normal = normalize(vertex.normal);
+    vec3 normal = CalculateNormal();
     vec3 viewDir = normalize(viewPos - vertex.fragment_position);
+
+    //if(hasNormalMap == 1){
+    //    viewDir = vertex.TBN * viewDir;
+    //}
     
     vec3 lighting = getDirLight(dirLight, normal, viewDir);
 

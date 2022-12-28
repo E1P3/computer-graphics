@@ -245,7 +245,7 @@ private:
 		string filename = string(path);
 		filename = directory + '/' + filename;
 
-		printf("Loading Texture %s", filename.c_str());
+		printf("Loading Texture %s \n", filename.c_str());
 
 		unsigned int textureID;
 		glGenTextures(1, &textureID);

@@ -26,9 +26,11 @@ enum angleType {
 class GameObject {
 	
 public:
-	Model model;
+	Model* model;
 	Animator animator;
 	bool  isAnimatied = false;
+	bool  hasNormalMap = false;
+	bool  hasShadow = true;
 	bool  isLight = false;
 	float PosX = 0.0f;
 	float PosY = 0.0f;
@@ -48,8 +50,12 @@ public:
 
 	GameObject() {}
 
-	GameObject(string const& model_filename) {
-		this->model = Model(model_filename);
+	GameObject(Model* model) {
+		this->model = model;
+	}
+
+	void SwitchModel(Model* model) {
+		this->model = model;
 	}
 
 	void Draw(Shader* shader) {
@@ -63,7 +69,22 @@ public:
 		else {
 			shader->SetInteger("isAnimated", 0, false);
 		}
-		model.Draw(shader->ID);
+
+		if (hasNormalMap) {
+			shader->SetInteger("hasNormalMap", 1, false);
+		}
+		else {
+			shader->SetInteger("hasNormalMap", 0, false);
+		}
+
+		if (hasShadow) {
+			shader->SetInteger("hasShadow", 1, false);
+		}
+		else {
+			shader->SetInteger("hasShadow", 0, false);
+		}
+
+		model->Draw(shader->ID);
 	}
 
 	void Move(float posx = 0.0f, float posy = 0.0f, float posz = 0.0f) {
