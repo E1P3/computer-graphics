@@ -64,30 +64,30 @@
 SHADERS
 ----------------------------------------------------------------------------*/
 
-#define PVS_DEBUG			"../Graphics/Shaders/depth_debug.vert"
-#define PFS_DEBUG			"../Graphics/Shaders/depth_debug.frag"
-#define PVS_NAME			"../Graphics/Shaders/simpleVertexShader.vert"
-#define PFS_NAME			"../Graphics/Shaders/simpleFragmentShader.frag"
-#define PVS_TN				"../Graphics/Shaders/normal.vert"
-#define PFS_TN				"../Graphics/Shaders/normal.frag"
-#define PVS_SHADOW			"../Graphics/Shaders/shadow_mapping_vs.vert"
-#define PFS_SHADOW			"../Graphics/Shaders/shadow_mapping_fs.frag"
+#define PVS_DEBUG		"../Graphics/Shaders/depth_debug.vert"
+#define PFS_DEBUG		"../Graphics/Shaders/depth_debug.frag"
+#define PVS_NAME		"../Graphics/Shaders/simpleVertexShader.vert"
+#define PFS_NAME		"../Graphics/Shaders/simpleFragmentShader.frag"
+#define PVS_TN			"../Graphics/Shaders/normal.vert"
+#define PFS_TN			"../Graphics/Shaders/normal.frag"
+#define PVS_SHADOW		"../Graphics/Shaders/shadow_mapping_vs.vert"
+#define PFS_SHADOW		"../Graphics/Shaders/shadow_mapping_fs.frag"
 #define PVS_SHADOW_DEPTH	"../Graphics/Shaders/shadow_mapping_depth.vert"
 #define PFS_SHADOW_DEPTH	"../Graphics/Shaders/shadow_mapping_depth.frag"
-#define PVS_SKYBOX			"../Graphics/Shaders/skybox.vert"
-#define PFS_SKYBOX			"../Graphics/Shaders/skybox.frag"
+#define PVS_SKYBOX		"../Graphics/Shaders/skybox.vert"
+#define PFS_SKYBOX		"../Graphics/Shaders/skybox.frag"
 
 /*----------------------------------------------------------------------------
 MESHES
 ----------------------------------------------------------------------------*/
 #define MESH_DEFAULT		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/default.dae"
 #define MESH_BATEMAN		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/bateman.dae"
-#define MESH_FLOOR			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/snow_texture/snow_floor.obj"
-#define MESH_PLACEHOLDER    "C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/penguin.dae"
-#define MESH_LAMP			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/lamp/lamp.obj"
-#define MESH_IGLOO_1			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_1.obj"
-#define MESH_IGLOO_2			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_2.obj"
-#define MESH_IGLOO_3			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_3.obj"
+#define MESH_FLOOR		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/snow_texture/snow_floor.obj"
+#define MESH_PLACEHOLDER    	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/penguin.dae"
+#define MESH_LAMP		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/lamp/lamp.obj"
+#define MESH_IGLOO_1		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_1.obj"
+#define MESH_IGLOO_2		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_2.obj"
+#define MESH_IGLOO_3		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_3.obj"
 #define MESH_ICE_SURFACE_1	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_surface_1/ice_surface_1.obj"
 #define MESH_ICE_SURFACE_2	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_surface_2/ice_surface_2.obj"
 #define MESH_ICE_SURFACE_3	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_surface_3/ice_surface_3.obj"
@@ -463,21 +463,21 @@ void init()
 	skybox = Cubemap();
 	skybox.loadCubemap(vector<std::string>
 	{
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_right.bmp",
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_left.bmp",
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_top.bmp",
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_bottom.bmp",
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_front.bmp",
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_back.bmp"
+		"../Graphics/Textures/skybox/clouds_right.bmp",
+		"../Graphics/Textures/skybox/clouds_left.bmp",
+		"../Graphics/Textures/skybox/clouds_top.bmp",
+		"../Graphics/Textures/skybox/clouds_bottom.bmp",
+		"../Graphics/Textures/skybox/clouds_front.bmp",
+		"../Graphics/Textures/skybox/clouds_back.bmp"
 	});
 	skybox.loadCubemap(vector<std::string>
 	{
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_right.png",
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_left.png",
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_top.png",
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_bottom.png",
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_front.png",
-		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_back.png"
+		"../Graphics/Textures/skybox/night_right.png",
+		"../Graphics/Textures/skybox/night_left.png",
+		"../Graphics/Textures/skybox/night_top.png",
+		"../Graphics/Textures/skybox/night_bottom.png",
+		"../Graphics/Textures/skybox/night_front.png",
+		"../Graphics/Textures/skybox/night_back.png"
 	});
 
 	skybox.setupCubemap();
