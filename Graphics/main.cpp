@@ -64,27 +64,27 @@
 SHADERS
 ----------------------------------------------------------------------------*/
 
-#define PVS_DEBUG		"../Graphics/Shaders/depth_debug.vert"
-#define PFS_DEBUG		"../Graphics/Shaders/depth_debug.frag"
-#define PVS_NAME		"../Graphics/Shaders/simpleVertexShader.vert"
-#define PFS_NAME		"../Graphics/Shaders/simpleFragmentShader.frag"
-#define PVS_TN			"../Graphics/Shaders/normal.vert"
-#define PFS_TN			"../Graphics/Shaders/normal.frag"
-#define PVS_SHADOW		"../Graphics/Shaders/shadow_mapping_vs.vert"
-#define PFS_SHADOW		"../Graphics/Shaders/shadow_mapping_fs.frag"
+#define PVS_DEBUG			"../Graphics/Shaders/depth_debug.vert"
+#define PFS_DEBUG			"../Graphics/Shaders/depth_debug.frag"
+#define PVS_NAME			"../Graphics/Shaders/simpleVertexShader.vert"
+#define PFS_NAME			"../Graphics/Shaders/simpleFragmentShader.frag"
+#define PVS_TN				"../Graphics/Shaders/normal.vert"
+#define PFS_TN				"../Graphics/Shaders/normal.frag"
+#define PVS_SHADOW			"../Graphics/Shaders/shadow_mapping_vs.vert"
+#define PFS_SHADOW			"../Graphics/Shaders/shadow_mapping_fs.frag"
 #define PVS_SHADOW_DEPTH	"../Graphics/Shaders/shadow_mapping_depth.vert"
 #define PFS_SHADOW_DEPTH	"../Graphics/Shaders/shadow_mapping_depth.frag"
-#define PVS_SKYBOX		"../Graphics/Shaders/skybox.vert"
-#define PFS_SKYBOX		"../Graphics/Shaders/skybox.frag"
+#define PVS_SKYBOX			"../Graphics/Shaders/skybox.vert"
+#define PFS_SKYBOX			"../Graphics/Shaders/skybox.frag"
 
 /*----------------------------------------------------------------------------
 MESHES
 ----------------------------------------------------------------------------*/
 #define MESH_DEFAULT		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/default.dae"
 #define MESH_BATEMAN		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/bateman.dae"
-#define MESH_FLOOR		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/snow_texture/snow_floor.obj"
-#define MESH_PLACEHOLDER    	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/penguin.dae"
-#define MESH_LAMP		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/lamp/lamp.obj"
+#define MESH_FLOOR			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/snow_texture/snow_floor.obj"
+#define MESH_PLACEHOLDER    "C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/penguin.dae"
+#define MESH_LAMP			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/lamp/lamp.obj"
 #define MESH_IGLOO_1		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_1.obj"
 #define MESH_IGLOO_2		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_2.obj"
 #define MESH_IGLOO_3		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_3.obj"
@@ -152,10 +152,8 @@ std::vector<PointLight> Lights;
 bool firstMouse = true;
 bool moveForward = false;
 bool moveBackward = false;
-bool printPos = true;
+bool printPos = false;
 
-//int width = 1920;
-//int height = 1080;
 int width = 1920;
 int height = 1080;
 int shadowrez = 16000;
@@ -442,6 +440,61 @@ void newLight(glm::vec3 pos, float str) {
 	numPointLights++;	
 }
 
+void printInstructions() {
+	cout << "\nINSTRUCTIONS" << "\n";
+	cout << "You can print this page again by pressing H\n";
+	cout << "\n";
+	cout << "To control the camera click on the screen and use W S A D to move around" << "\n";
+	cout << "\n";
+	cout << "You can switch between moving the penguin group around, manipulating objects and manipulating lights in the scene using P O and L respectively." << "\n";
+	cout << "\n";
+	cout << "CAMERA" << "\n";
+	cout << "	Move: 					WSAD" << "\n";
+	cout << "	Rotate: 				hold mouse button and move the cursor" << "\n";
+	cout << "	Reset:					R" << "\n";
+	cout << "\n";
+	cout << "MODE SWITCHING" << "\n";
+	cout << "	Penguins: 				P" << "\n";
+	cout << "	Objects: 				O" << "\n";
+	cout << "	Lights: 				L" << "\n";
+	cout << "\n";
+	cout << "MISCELLANOUS" << "\n";
+	cout << "	Stop the sun 0.0			Z" << "\n";
+	cout << "	See Depth Map				X" << "\n";
+	cout << "	Print Object/Light data 		C" << "\n";
+	cout << "	Scaling,moving,rotating strength	, to lower . to increase" << "\n";
+	cout << "" << "\n";
+	cout << "PENGUINS" << "\n";
+	cout << "	Move: 					arrow keys" << "\n";
+	cout << "	New Penguin: 				N" << "\n";
+	cout << "" << "\n";
+	cout << "OBJECTS" << "\n";
+	cout << "	New Model				N" << "\n";
+	cout << "	MODE SWITCHING" << "\n";
+	cout << "		MOVE: 				1" << "\n";
+	cout << "		ROTATE: 			2" << "\n";
+	cout << "		SCALE: 				3" << "\n";
+	cout << "		SWITCH MODELS/OBJECTS:	 	4" << "\n";
+	cout << "" << "\n";
+	cout << "	MOVE: 					arrow keys for left,right,forward,back" << "\n";
+	cout << "						pageup pagedown for up down" << "\n";
+	cout << "	ROTATE: 				as above" << "\n";
+	cout << "	SCALE: 					as above" << "\n";
+	cout << "	SWITCH: 				up down for switching models" << "\n";
+	cout << "						left right for switching objects" << "\n";
+	cout << "LIGHTS" << "\n";
+	cout << "	New Light				N" << "\n";
+	cout << "	MODE SWITCHING" << "\n";
+	cout << "		MOVE: 				1" << "\n";
+	cout << "		MODIFY LIGHT STRENGTH:	 	3" << "\n";
+	cout << "		SWITCH LIGHTS: 			4" << "\n";
+	cout << "	MOVE:					arrow keys for left,right,forward,back" << "\n";
+	cout << "						pageup pagedown for up down" << "\n";
+	cout << "	MODIFY LIGHT STRENGTH:			up down to scale the brightness" << "\n";
+	cout << "	SWITCH:					left right to switch lights" << "\n";
+}
+
+// compiling shaders, load models, lights and create a scene
 void init()
 {
 	skyboxShader = Shader(PVS_SKYBOX, PFS_SKYBOX);
@@ -954,6 +1007,7 @@ void init()
 	LightIndex = numPointLights - 1;
 	lightShader.SetInteger("numPointLights", numPointLights, true);
 	selected = &Penguins[0];
+	printInstructions();
 }
 
 void mouseMove(int x, int y) {
@@ -1224,6 +1278,9 @@ void keypress(unsigned char key, int x, int y) {
 		isDepthMap = !isDepthMap;
 	if (key == 'c') {
 		printPos = true;
+	}
+	if (key == 'h') {
+		printInstructions();
 	}
 	if (key == 'v') {
 		cout << "Object Index " << ObjectIndex << "\n";
