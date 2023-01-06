@@ -102,7 +102,10 @@ public:
 	}
 
 	void Scale(float scalex = 1.0f, float scaley = 1.0f, float scalez = 1.0f) {
-		scaleMatrix = glm::scale(scalex, scaley, scalez);
+		ScaleX = scalex;
+		ScaleY = scaley;
+		ScaleZ = scalez;
+		scaleMatrix = glm::scale(ScaleX, ScaleY, ScaleZ);
 		RecalculateTransform();
 	}
 
@@ -110,11 +113,11 @@ public:
 		RotX += rotx;
 		RotY += roty;
 		RotZ += rotz;
-		if (RotX <= 360.0f)
+		if (RotX >= 360.0f)
 			RotX -= 360.0f;
-		if (RotY <= 360.0f)
+		if (RotY >= 360.0f)
 			RotY -= 360.0f;
-		if (RotZ <= 360.0f)
+		if (RotZ >= 360.0f)
 			RotZ -= 360.0f;
 
 		RecalculateTransform();

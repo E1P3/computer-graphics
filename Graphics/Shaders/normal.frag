@@ -35,8 +35,8 @@ in VERTEX {
 
 uniform DirLight dirLight;
 
-#define NR_POINT_LIGHTS 4  
-uniform PointLight pointLights[NR_POINT_LIGHTS];
+#define MAX_POINT_LIGHTS 20  
+uniform PointLight pointLights[MAX_POINT_LIGHTS];
 
 uniform sampler2D shadowMap;
 uniform sampler2D texture_diffuse1;
@@ -46,6 +46,7 @@ uniform sampler2D texture_normal1;
 uniform vec3 dirLightPos;
 uniform vec3 viewPos;
 
+uniform int numPointLights;
 uniform int hasNormalMap;
 uniform int hasShadow;
 
@@ -123,7 +124,7 @@ vec3 getDirLight(DirLight light, vec3 normal, vec3 viewDir)
 
 vec3 getPointLight(PointLight light, vec3 normal, vec3 fragment_position, vec3 viewDir)
 {
-    vec3 lightColor = vec3(light.strength) * vec3(0.0,0.9,1.0);
+    vec3 lightColor = vec3(light.strength) * vec3(1.0,1.0,0.5);
     vec3 lightDir = normalize(light.position - fragment_position);
 
     //if(hasNormalMap == 1){
@@ -172,7 +173,7 @@ void main()
     
     vec3 lighting = getDirLight(dirLight, normal, viewDir);
 
-    for(int i = 0; i < 4; i++){
+    for(int i = 0; i < numPointLights; i++){
         lighting += getPointLight(pointLights[i], normal, vertex.fragment_position, viewDir);
     }
         

@@ -29,6 +29,7 @@
 #include "ShadowMapFBO.h"
 #include "Animation.h"
 #include "Animator.h"
+#include "PointLight.h"
 
 
 //local1 = glm::mat4(1.0f);
@@ -79,21 +80,43 @@ SHADERS
 /*----------------------------------------------------------------------------
 MESHES
 ----------------------------------------------------------------------------*/
-#define MESH_DEFAULT		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/default.dae"
-#define MESH_BATEMAN		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/bateman.dae"
-#define MESH_MAP			"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/map.dae"
-#define MESH_PLACEHOLDER    "C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/penguin.dae"
-#define MESH_ICE_SURFACE_1	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_1/ice_surface_1.obj"
-#define MESH_ICE_SURFACE_2	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_2/ice_surface_2.obj"
-#define MESH_ICE_SURFACE_3	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_3/ice_surface_3.obj"
-#define MESH_ICE_SURFACE_4	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_4/ice_surface_4.obj"
-#define MESH_ICE_SURFACE_5	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_5/ice_surface_5.obj"
-#define MESH_ICE_SURFACE_6	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_6/ice_surface_6.obj"
-#define MESH_ICE_SURFACE_7	"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Meshes/ice_surface_7/ice_surface_7.obj"
+#define MESH_DEFAULT		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/default.dae"
+#define MESH_BATEMAN		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/bateman.dae"
+#define MESH_FLOOR			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/snow_texture/snow_floor.obj"
+#define MESH_PLACEHOLDER    "C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/penguin.dae"
+#define MESH_LAMP			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/lamp/lamp.obj"
+#define MESH_IGLOO_1			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_1.obj"
+#define MESH_IGLOO_2			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_2.obj"
+#define MESH_IGLOO_3			"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/igloos/igloo_3.obj"
+#define MESH_ICE_SURFACE_1	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_surface_1/ice_surface_1.obj"
+#define MESH_ICE_SURFACE_2	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_surface_2/ice_surface_2.obj"
+#define MESH_ICE_SURFACE_3	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_surface_3/ice_surface_3.obj"
+#define MESH_ICE_SURFACE_4	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_surface_4/ice_surface_4.obj"
+#define MESH_ICE_SURFACE_5	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_surface_5/ice_surface_5.obj"
+#define MESH_ICE_SURFACE_6	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_surface_6/ice_surface_6.obj"
+#define MESH_ICE_SURFACE_7	"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_surface_7/ice_surface_7.obj"
+#define MESH_ICE_WALL_1		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_wall_1/ice_wall_1.obj"
+#define MESH_ICE_WALL_2		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_wall_2/ice_wall_2.obj"
+#define MESH_ICE_WALL_3		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_wall_3/ice_wall_3.obj"
+#define MESH_ICE_WALL_4		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_wall_4/ice_wall_4.obj"
+#define MESH_ICE_WALL_5		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_wall_5/ice_wall_5.obj"
+#define MESH_ICE_WALL_6		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_wall_6/ice_wall_6.obj"
+#define MESH_ICE_WALL_7		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Meshes/ice_wall_7/ice_wall_7.obj"
 /*----------------------------------------------------------------------------
 ----------------------------------------------------------------------------*/
 
 using namespace std;
+
+enum DebugState {
+	SCALING, MOVING, ROTATING, SWITCHING
+};
+
+enum ObjectState{
+	PENGUINS, OBJECTS, LIGHTS
+};
+
+DebugState debug_state = MOVING;
+ObjectState object_state = PENGUINS;
 
 Camera player_camera = Camera();
 
@@ -107,6 +130,7 @@ Animation penguin_walk;
 Animator animator;
 
 GameObject* selected;
+GameObject lightCursor = GameObject();
 
 glm::mat4 lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, -60.0f, 60.f);
 glm::mat4 lightSpaceMatrix;
@@ -123,6 +147,7 @@ GameObject character, bateman;
 
 std::vector<GameObject> Objects, Penguins;
 std::vector<Model> Models;
+std::vector<PointLight> Lights;
 
 bool firstMouse = true;
 bool moveForward = false;
@@ -131,11 +156,12 @@ bool printPos = true;
 
 //int width = 1920;
 //int height = 1080;
-int width = 3440;
-int height = 1440;
+int width = 1920;
+int height = 1080;
 int shadowrez = 16000;
-int numPointLights = 4;
-int ObjectIndex = 1;
+int numPointLights = 0;
+int LightIndex = 0;
+int ObjectIndex = 0;
 int ModelIndex = 1;
 unsigned int quadVAO = 0;
 unsigned int quadVBO;
@@ -279,7 +305,7 @@ void display() {
 	//std::cout << "CAMERA: " << player_camera.Position.x << ", " << player_camera.Position.y << ", " << player_camera.Position.z << ", YAW: " << player_camera.Yaw << " PITCH: " << player_camera.Pitch << "\n";
 	
 	if (!isSunRotating)
-		counter += delta;
+		counter += delta* 0.1;
 
 	if (counter > maxCount) {
 		counter = 0;
@@ -299,7 +325,7 @@ void display() {
 	float fraction = counter / maxCount;
 	float radAngle = fraction * 3.1415;
 
-	if (isDay)
+    if (isDay)
 		ratio = abs(cos(radAngle));
 	else
 		ratio = 1;
@@ -344,13 +370,24 @@ void updateDirection() {
 }
 void updateStep() {
 	for (int i = 0; i < Penguins.size(); i++) {
-		if (printPos)
-			cout << "Object " << i << " : " << Penguins[i].position.x << " , " << Penguins[i].position.y << " , " << Penguins[i].position.z << "\n";
+		//if (printPos)
+		//	cout << "Object " << i << " : " << Penguins[i].position.x << " , " << Penguins[i].position.y << " , " << Penguins[i].position.z << "\n";
 		Penguins[i].Step(delta);
 	}
 	selected->Step(delta);
 }
 
+void printObject(GameObject object) {
+	cout << "Model:    " << object.model->directory << "\n";
+	cout << "Position: " << object.position.x<<", "<< object.position.y <<", "<< object.position.z << "\n";
+	cout << "Rotation: " << object.RotX << ", " << object.RotY << ", " << object.RotZ << "\n";
+	cout << "Scale:    " << object.ScaleX << ", " << object.ScaleY << ", " << object.ScaleZ << "\n";
+}
+
+void printLight(PointLight light) {
+	cout << "Position: " << light.position.x << ", " << light.position.y << ", " << light.position.z << "\n";
+	cout << "Strength:    " << light.strength << "\n";
+}
 void updateScene() {
 	
 	static DWORD last_time = 0;
@@ -369,6 +406,23 @@ void updateScene() {
 		moveBackward = false;
 	}
 
+	if (printPos) {
+		cout << "\nOBJECTS\n\n";
+		for (int i = 0; i < Objects.size(); i++) {
+			cout << "Object " << i <<"\n";
+			printObject(Objects[i]);
+			cout << "\n";
+		}
+		cout << "\nLIGHTS\n\n";
+		for (int i = 0; i < Lights.size(); i++) {
+			cout << "Light " << i << "\n";
+			printLight(Lights[i]);
+			cout << "\n";
+		}
+		cout << "\n\n";
+		printPos = !printPos;
+	}
+
 	updateDirection();
 	updateAnimation();
 	updateStep();
@@ -380,20 +434,12 @@ void updateScene() {
 	display();
 }
 
-void loadLights() {
-
-	for (int i = 0; i < numPointLights; i++) {
-
-		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].position", pointLightPositions[i], true);
-		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].ambient", 0.5f, 0.5f, 0.5f, true);
-		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].diffuse", 0.01f, 0.01f, 0.01f, true);
-		lightShader.SetVector3f("pointLights[" + std::to_string(i) + "].specular", 0.22f, 0.22f, 0.22f, true);
-		lightShader.SetFloat("pointLights[" + std::to_string(i) + "].constant", 1.0f, true);
-		lightShader.SetFloat("pointLights[" + std::to_string(i) + "].linear", 0.09f, true);
-		lightShader.SetFloat("pointLights[" + std::to_string(i) + "].quadratic", 0.032f, true);
-		lightShader.SetFloat("pointLights[" + std::to_string(i) + "].strength", 0.25f, true);
-	}
-
+void newLight(glm::vec3 pos, float str) {
+	Lights.push_back(PointLight(pos));
+	Lights[numPointLights].strength = str;
+	Lights[numPointLights].index = numPointLights;
+	Lights[numPointLights].Update(&lightShader);
+	numPointLights++;	
 }
 
 void init()
@@ -417,50 +463,483 @@ void init()
 	skybox = Cubemap();
 	skybox.loadCubemap(vector<std::string>
 	{
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_right.bmp",
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_left.bmp",
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_top.bmp",
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_bottom.bmp",
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_front.bmp",
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/clouds_back.bmp"
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_right.bmp",
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_left.bmp",
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_top.bmp",
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_bottom.bmp",
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_front.bmp",
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/clouds_back.bmp"
 	});
 	skybox.loadCubemap(vector<std::string>
 	{
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_right.png",
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_left.png",
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_top.png",
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_bottom.png",
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_front.png",
-		"C:/Users/HOW TO SPOON/Desktop/beans/code/computer-graphics/Graphics/Textures/skybox/night_back.png"
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_right.png",
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_left.png",
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_top.png",
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_bottom.png",
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_front.png",
+		"C:/Users/jansz/Desktop/beans/programming_stuff/computer-graphics/Graphics/Textures/skybox/night_back.png"
 	});
 
 	skybox.setupCubemap();
 	
-	game_map = Model(MESH_MAP);
 	penguin = Model(MESH_PLACEHOLDER);
-	iceberg = Model("C:/Users/HOW TO SPOON/Desktop/beans/unsorted/Meshes/iceice/ice1.obj");
-
 	Models.push_back(penguin);
-	Models.push_back(iceberg);
-	Models.push_back(Model(MESH_ICE_SURFACE_1));
-	Models.push_back(Model(MESH_ICE_SURFACE_2));
-	Models.push_back(Model(MESH_ICE_SURFACE_3));
-	Models.push_back(Model(MESH_ICE_SURFACE_4));
-	Models.push_back(Model(MESH_ICE_SURFACE_5));
-	Models.push_back(Model(MESH_ICE_SURFACE_6));
-	Models.push_back(Model(MESH_ICE_SURFACE_7));
+	Models.push_back(Model(MESH_FLOOR));
+	Models.push_back(Model(MESH_LAMP));
+	Models.push_back(Model(MESH_IGLOO_1));
+	Models.push_back(Model(MESH_IGLOO_2));
+	Models.push_back(Model(MESH_IGLOO_3));
+	Models.push_back(Model(MESH_ICE_WALL_2));
+	Models.push_back(Model(MESH_ICE_WALL_3));
 
-	character = GameObject(&game_map);
-	character.Rotate(270.f, 0.0f, 0.0f);
-	Objects.push_back(character);
-
-	GameObject ice_berg = GameObject(&iceberg);
-	ice_berg.hasNormalMap = true;
-	Objects.push_back(ice_berg);
 	
 	penguin_walk = Animation(MESH_PLACEHOLDER, &penguin);
 
-	loadLights();
+	Lights.push_back(PointLight(glm::vec3(0.0f, 0.1f, 0.0f)));
+	Lights[0].index = 0;
+	Lights[0].Update(&lightShader);
+	numPointLights++;
+
+	GameObject new_object;
+
+	new_object = GameObject(&Models[1]);
+	new_object.hasNormalMap = true;
+	new_object.Move(0.0f, 0.0f, 0.0f);
+	new_object.Rotate(0.0f, 0.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[4]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-30.0f, 0.0f, -15.0f);
+	new_object.Rotate(0.0f, -50.0f, 0.0f);
+	new_object.Scale(6.0f, 6.0f, 6.0f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[3]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-57.5f, 0.0f, -5.0f);
+	new_object.Rotate(0.0f, -70.0f, 0.0f);
+	new_object.Scale(3.5f, 3.5f, 3.5f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[4]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-12.5f, 0.0f, -25.0f);
+	new_object.Rotate(0.0f, 0.0f, 0.0f);
+	new_object.Scale(2.25f, 2.25f, 2.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[4]);
+	new_object.hasNormalMap = true;
+	new_object.Move(0.0f, 0.0f, -10.0f);
+	new_object.Rotate(0.0f, -85.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[4]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-15.0f, 0.0f, 5.0f);
+	new_object.Rotate(0.0f, 0.0f, 0.0f);
+	new_object.Scale(1.625f, 1.625f, 1.625f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[4]);
+	new_object.hasNormalMap = true;
+	new_object.Move(21.25f, 0.0f, 12.5f);
+	new_object.Rotate(0.0f, 165.0f, 0.0f);
+	new_object.Scale(1.3125f, 1.3125f, 1.3125f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[4]);
+	new_object.hasNormalMap = true;
+	new_object.Move(0.0f, 0.0f, -35.0f);
+	new_object.Rotate(0.0f, -32.5f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[4]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-37.5f, 0.0f, 17.5f);
+	new_object.Rotate(1.25f, -13.75f, 0.0f);
+	new_object.Scale(2.25f, 2.25f, 2.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[3]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-12.5f, 0.0f, 28.75f);
+	new_object.Rotate(0.0f, 113.75f, 0.0f);
+	new_object.Scale(1.9375f, 1.625f, 1.9375f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[5]);
+	new_object.hasNormalMap = true;
+	new_object.Move(21.5625f, 0.0f, -25.9375f);
+	new_object.Rotate(0.0f, 194.062f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[3]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-32.5f, 0.0f, 11.25f);
+	new_object.Rotate(0.0f, -50.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[3]);
+	new_object.hasNormalMap = true;
+	new_object.Move(6.25f, 0.0f, -47.5f);
+	new_object.Rotate(0.0f, -127.5f, 0.0f);
+	new_object.Scale(2.25f, 2.25f, 2.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[3]);
+	new_object.hasNormalMap = true;
+	new_object.Move(18.75f, 0.0f, 32.5f);
+	new_object.Rotate(0.0f, -263.75f, 0.0f);
+	new_object.Scale(2.25f, 2.25f, 2.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[3]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-5.0f, 0.0f, 17.5f);
+	new_object.Rotate(0.0f, 142.5f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[3]);
+	new_object.hasNormalMap = true;
+	new_object.Move(37.5f, 0.0f, -10.0f);
+	new_object.Rotate(0.0f, -221.25f, 0.0f);
+	new_object.Scale(1.625f, 2.25f, 1.625f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[3]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-12.5f, 0.0f, -12.5f);
+	new_object.Rotate(0.0f, -90.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[5]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-5.0f, 0.0f, -20.0f);
+	new_object.Rotate(0.0f, 60.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[5]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-35.0f, 0.0f, 27.5f);
+	new_object.Rotate(0.0f, 70.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[5]);
+	new_object.hasNormalMap = true;
+	new_object.Move(14.375f, 0.0f, 33.75f);
+	new_object.Rotate(0.0f, 145.0f, 0.0f);
+	new_object.Scale(1.625f, 1.625f, 1.625f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[6]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-2.5, 0.0f, -45.4688f);
+	new_object.Rotate(0.0f, 2.5f, 0.0f);
+	new_object.Scale(7.875f, 6.625f, 2.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[6]);
+	new_object.hasNormalMap = true;
+	new_object.Move(37.5f, 0.0f, -27.5f);
+	new_object.Rotate(0.0f, -47.5f, 0.0f);
+	new_object.Scale(8.5f, 6.0f, 8.5f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[7]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-37.5f, 0.0f, -35.0f);
+	new_object.Rotate(0.0f, 31.875f, 0.0f);
+	new_object.Scale(6.0f, 5.375f, 7.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[7]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-52.5f, 0.0f, -10.0f);
+	new_object.Rotate(0.0f, 82.5f, 0.0f);
+	new_object.Scale(6.0f, 6.0f, 8.5f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[6]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-45.0f, 0.0f, 27.5f);
+	new_object.Rotate(0.0f, 122.5f, 0.0f);
+	new_object.Scale(8.5f, 8.5f, 8.5f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[6]);
+	new_object.hasNormalMap = true;
+	new_object.Move(32.5f, 0.0f, 32.5f);
+	new_object.Rotate(0.0f, -147.5f, 0.0f);
+	new_object.Scale(6.0f, 8.5f, 8.5f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[6]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-5.0f, 0.0f, 45.0f);
+	new_object.Rotate(0.0f, -180.0f, 0.0f);
+	new_object.Scale(8.5f, 8.5f, 8.5f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[7]);
+	new_object.hasNormalMap = true;
+	new_object.Move(47.5f, 0.0f, 7.5f);
+	new_object.Rotate(0.0f, -101.875f, 0.0f);
+	new_object.Scale(7.875f, 4.75f, 7.875f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-10.0f, 0.0f, -12.5f);
+	new_object.Rotate(0.0f, 47.5f, 0.0f);
+	new_object.Scale(3.5f, 3.5f, 3.5f);
+	newLight(glm::vec3(new_object.position.x, 5, new_object.position.z), 8.5);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-18.75f, 0.0f, -6.25f);
+	new_object.Rotate(0.0f, 32.5f, 0.0f);
+	new_object.Scale(3.5f, 3.5f, 3.5f);
+	newLight(glm::vec3(new_object.position.x, 5, new_object.position.z), 8.5);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-11.875f, 0.0f, 5.0f);
+	new_object.Rotate(0.0f, 62.5f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	newLight(glm::vec3(new_object.position.x, 1.25, new_object.position.z), 2.25);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-2.5f, 0.0f, -10.0f);
+	new_object.Rotate(0.0f, -15.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	newLight(glm::vec3(new_object.position.x, 1.25, new_object.position.z), 2.25);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-25.0f, 0.0f, 7.5f);
+	new_object.Rotate(2.5f, 45.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	newLight(glm::vec3(new_object.position.x, 1.25, new_object.position.z), 2.25);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(2.5f, 0.0f, -15.0f);
+	new_object.Rotate(0.0f, -70.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	newLight(glm::vec3(new_object.position.x, 1.25, new_object.position.z), 2.25);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-32.5f, 0.0f, 22.5f);
+	new_object.Rotate(0.0f, -77.5f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	newLight(glm::vec3(new_object.position.x, 1.25, new_object.position.z), 2.25);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-22.5f, 0.0f, 28.75f);
+	new_object.Rotate(0.0f, 5.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	newLight(glm::vec3(new_object.position.x, 1.25, new_object.position.z), 2.25);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(1.25f, 0.0f, -33.75f);
+	new_object.Rotate(0.0f, 20.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	newLight(glm::vec3(new_object.position.x, 1.25, new_object.position.z), 2.25);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(10.0f, 0.0f, -36.25f);
+	new_object.Rotate(1.25f, 0.0f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	newLight(glm::vec3(new_object.position.x, 1.25, new_object.position.z), 2.25);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(18.75f, 0.0f, -28.75f);
+	new_object.Rotate(0.0f, -42.5f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	newLight(glm::vec3(new_object.position.x, 1.25, new_object.position.z), 2.25);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(21.25f, 0.0f, 7.5f);
+	new_object.Rotate(1.25f, -103.75f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	newLight(glm::vec3(new_object.position.x, 1.25, new_object.position.z), 2.25);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(27.5f, 0.0f, -8.75f);
+	new_object.Rotate(0.0f, -71.25f, 0.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+	newLight(glm::vec3(new_object.position.x, 1.25, new_object.position.z), 2.25);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(11.25f, 0.0f, 27.5f);
+	new_object.Rotate(0.0f, 23.75f, 0.0f);
+	new_object.Scale(2.25f, 2.25f, 2.25f);
+	newLight(glm::vec3(new_object.position.x, 3.75, new_object.position.z), 4.75);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-6.25f, 0.0f, -31.25f);
+	new_object.Rotate(0.0f, 71.25f, 0.0f);
+	new_object.Scale(2.25f, 2.25f, 2.25f);
+	newLight(glm::vec3(new_object.position.x, 3.75, new_object.position.z), 4.75);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[2]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-36.25f, 0.0f, -2.5f);
+	new_object.Rotate(0.0f, 0.0f, 0.0f);
+	new_object.Scale(2.25f, 2.25f, 2.25f);
+	newLight(glm::vec3(new_object.position.x, 3.75, new_object.position.z), 4.75);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[0]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-15.0f, 0.0f, -5.0f);
+	new_object.Rotate(-95.0f, 0.0f, 20.0f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[0]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-8.75f, 0.0f, -10.0f);
+	new_object.Rotate(-96.25f, 0.0f, 56.25f);
+	new_object.Scale(1.0f, 1.0f, 1.0f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[0]);
+	new_object.hasNormalMap = true;
+	new_object.Move(0.15625f, 0.0f, -6.95312f);
+	new_object.Rotate(85.0f, 0.0f, -196.875f);
+	new_object.Scale(0.25f, 0.25f, 0.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[0]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-10.3125f, 0.0f, 6.25f);
+	new_object.Rotate(-78.3594f, -1.25f, -283.125f);
+	new_object.Scale(0.25f, 0.25f, 0.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[0]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-29.6875, 0.0f, 12.5f);
+	new_object.Rotate(-101.25, 5, 52.5f);
+	new_object.Scale(0.25f, 0.25f, 0.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[0]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-14.0625, 0.0f, 24.375f);
+	new_object.Rotate(-97.5, 0.0f, 227.5f);
+	new_object.Scale(0.25f, 0.25f, 0.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[0]);
+	new_object.hasNormalMap = true;
+	new_object.Move(9.375, 0.0f, -31.25f);
+	new_object.Rotate(-95, 0.0f, 0.0f);
+	new_object.Scale(0.25f, 0.25f, 0.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[0]);
+	new_object.hasNormalMap = true;
+	new_object.Move(-2.5, 0.0f, -23.75f);
+	new_object.Rotate(-91.25, 0.0f, 102.5f);
+	new_object.Scale(0.25f, 0.25f, 0.25f);
+
+	Objects.push_back(new_object);
+
+	new_object = GameObject(&Models[0]);
+	new_object.hasNormalMap = true;
+	new_object.Move(17.5, 0.0f, 20.0f);
+	new_object.Rotate(-80.0f, 3.75, -124.688);
+	new_object.Scale(0.25f, 0.25f, 0.25f);
+
+	Objects.push_back(new_object);
 
 	for (int i = 0; i < 10; i++) {
 		GameObject pengo = GameObject(&penguin);
@@ -472,6 +951,8 @@ void init()
 		Penguins.push_back(pengo);
 	}
 
+	LightIndex = numPointLights - 1;
+	lightShader.SetInteger("numPointLights", numPointLights, true);
 	selected = &Penguins[0];
 }
 
@@ -504,6 +985,188 @@ void mouseButton(int button, int state, int x, int y) {
 
 void arrowKeyes(int key, int x, int y) {
 
+	if (object_state == OBJECTS) {
+		switch (debug_state) {
+		case SCALING:
+			switch (key)
+			{
+			case GLUT_KEY_UP:
+				selected->Scale(selected->ScaleX, selected->ScaleY, selected->ScaleZ + speed);
+				break;
+			case GLUT_KEY_DOWN:
+				selected->Scale(selected->ScaleX, selected->ScaleY, selected->ScaleZ - speed);
+				break;
+			case GLUT_KEY_LEFT:
+				selected->Scale(selected->ScaleX + speed, selected->ScaleY, selected->ScaleZ);
+				break;
+			case GLUT_KEY_RIGHT:
+				selected->Scale(selected->ScaleX -speed, selected->ScaleY, selected->ScaleZ);
+				break;
+			case GLUT_KEY_PAGE_UP:
+				selected->Scale(selected->ScaleX, selected->ScaleY + speed, selected->ScaleZ);
+				break;
+			case GLUT_KEY_PAGE_DOWN:
+				selected->Scale(selected->ScaleX, selected->ScaleY - speed, selected->ScaleZ);
+				break;
+			}
+			break;
+
+		case ROTATING:
+			switch (key)
+			{
+			case GLUT_KEY_LEFT:
+				selected->Rotate(0.0f, speed, 0.0f);
+				break;
+			case GLUT_KEY_RIGHT:
+				selected->Rotate(0.0f, -speed, 0.0f);
+				break;
+			case GLUT_KEY_UP:
+				selected->Rotate(-speed, 0.0f, 0.0f);
+				break;
+			case GLUT_KEY_DOWN:
+				selected->Rotate(speed, 0.0f, 0.0f);
+				break;
+			case GLUT_KEY_PAGE_UP:
+				selected->Rotate(0.0f, 0.0f, speed);
+				break;
+			case GLUT_KEY_PAGE_DOWN:
+				selected->Rotate(0.0f, 0.0f, -speed);
+				break;
+			}
+			break;
+
+		case SWITCHING:
+			switch (key)
+			{
+			case GLUT_KEY_UP:
+				if (ModelIndex > 0)
+					ModelIndex--;
+				selected->SwitchModel(&Models[ModelIndex]);
+				break;
+			case GLUT_KEY_DOWN:
+				if (ModelIndex < Models.size() - 1)
+					ModelIndex++;
+				selected->SwitchModel(&Models[ModelIndex]);
+				break;
+			case GLUT_KEY_LEFT:
+				if (ObjectIndex > 0)
+					ObjectIndex--;
+				selected = &Objects[ObjectIndex];
+				break;
+			case GLUT_KEY_RIGHT:
+				if (ObjectIndex < Objects.size() - 1)
+					ObjectIndex++;
+				selected = &Objects[ObjectIndex];
+				break;
+			}
+			break;
+
+		case MOVING:
+			switch (key)
+			{
+			case GLUT_KEY_PAGE_UP:
+				selected->Move(0.0f, speed, 0.0f);
+				break;
+			case GLUT_KEY_PAGE_DOWN:
+				selected->Move(0.0f, -speed, 0.0f);
+				break;
+			case GLUT_KEY_LEFT:
+				selected->Move(-speed, 0.0f, 0.0f);
+				break;
+			case GLUT_KEY_RIGHT:
+				selected->Move(speed, 0.0f, 0.0f);
+				break;
+			case GLUT_KEY_UP:
+				selected->Move(0.0f, 0.0f, speed);
+				break;
+			case GLUT_KEY_DOWN:
+				selected->Move(0.0f, 0.0f, -speed);
+				break;
+			}
+			break;
+
+		default:
+			break;
+		}
+		return;
+	}
+
+	if (object_state == LIGHTS) {
+		switch (debug_state) {
+		case SCALING:
+			switch (key)
+			{
+			case GLUT_KEY_UP:
+				Lights[LightIndex].strength = Lights[LightIndex].strength + speed;
+				Lights[LightIndex].Update(&lightShader);
+				break;
+			case GLUT_KEY_DOWN:
+				Lights[LightIndex].strength = Lights[LightIndex].strength - speed;
+				Lights[LightIndex].Update(&lightShader);
+				break;
+			}
+			break;
+
+		case SWITCHING:
+			switch (key)
+			{
+			case GLUT_KEY_LEFT:
+				if (LightIndex > 0)
+					LightIndex--;
+				selected->position = Lights[LightIndex].position;
+				Lights[LightIndex].Update(&lightShader);
+				break;
+			case GLUT_KEY_RIGHT:
+				if (LightIndex < Lights.size() - 1)
+					LightIndex++;
+				selected->position = Lights[LightIndex].position;
+				Lights[LightIndex].Update(&lightShader);
+				break;
+			}
+			break;
+
+		case MOVING:
+			switch (key)
+			{
+			case GLUT_KEY_PAGE_UP:
+				selected->Move(0.0f, speed, 0.0f);
+				Lights[LightIndex].position = selected->position;
+				Lights[LightIndex].Update(&lightShader);
+				break;
+			case GLUT_KEY_PAGE_DOWN:
+				selected->Move(0.0f, -speed, 0.0f);
+				Lights[LightIndex].position = selected->position;
+				Lights[LightIndex].Update(&lightShader);
+				break;
+			case GLUT_KEY_LEFT:
+				selected->Move(-speed, 0.0f, 0.0f);
+				Lights[LightIndex].position = selected->position;
+				Lights[LightIndex].Update(&lightShader);
+				break;
+			case GLUT_KEY_RIGHT:
+				selected->Move(speed, 0.0f, 0.0f);
+				Lights[LightIndex].position = selected->position;
+				Lights[LightIndex].Update(&lightShader);
+				break;
+			case GLUT_KEY_UP:
+				selected->Move(0.0f, 0.0f, speed);
+				Lights[LightIndex].position = selected->position;
+				Lights[LightIndex].Update(&lightShader);
+				break;
+			case GLUT_KEY_DOWN:
+				selected->Move(0.0f, 0.0f, -speed);
+				Lights[LightIndex].position = selected->position;
+				Lights[LightIndex].Update(&lightShader);
+				break;
+			}
+			break;
+
+			default:
+				break;
+		}
+		return;
+	}
+
 	switch (key)
 	{
 	case GLUT_KEY_UP:
@@ -513,13 +1176,13 @@ void arrowKeyes(int key, int x, int y) {
 		moveBackward = true;
 		break;
 	case GLUT_KEY_LEFT:
-		direction += 11.25f;
+		direction += 11.25f * speed;
 		if (direction > 360)
 			direction -= 360;
 		selected->setDirection(direction, DEG);
 		break;
 	case GLUT_KEY_RIGHT:
-		direction -= 11.25f;
+		direction -= 11.25f * speed;
 		if (direction < -360)
 			direction += 360;
 		selected->setDirection(direction, DEG);
@@ -536,64 +1199,80 @@ void keypress(unsigned char key, int x, int y) {
 
 	int mod = glutGetModifiers();
 
-	player_camera.CameraKeyboard(key,mod, delta);
+	player_camera.CameraKeyboard(key, mod, delta);
 
+	if (key == 'p') {
+		cout << "\nPENGUIN MODE\n";
+		object_state = PENGUINS;
+		selected = &Penguins[0];
+	}
+	if (key == 'o') {
+		cout << "\nOBJECT MODE\n";
+		object_state = OBJECTS;
+		selected = &Objects[ObjectIndex];
+	}
+	if (key == 'l') {
+		cout << "\nLIGHT MODE\n";
+		object_state = LIGHTS;
+		selected = &lightCursor;
+	}
 	if (key == 'r')
 		player_camera.Reset();
-	if (key == 'o')
+	if (key == 'z')
 		isSunRotating = !isSunRotating;
-	if (key == 'p')
+	if (key == 'x')
 		isDepthMap = !isDepthMap;
-	if (key == 'm') {
+	if (key == 'c') {
 		printPos = true;
 	}
-	if (key == 't') {
+	if (key == 'v') {
+		cout << "Object Index " << ObjectIndex << "\n";
+		cout << "Model Index " << ModelIndex << "\n\n";
+	}
+	if (key == '.') {
 		speed *= 2;
 		cout << "speed: " << speed << "\n";
 	}
-	if (key == 'g') {
+	if (key == ',') {
 		speed /= 2;
 		cout << "speed: " << speed << "\n";
 	}
-	if (key == '`') {
-		isDebug = !isDebug;
-		if (isDebug) {
-			selected = &Objects[ObjectIndex];
+	if (key == 'n') {
+		if (object_state == PENGUINS) {
+			GameObject pengo = GameObject(&penguin);
+			pengo.Scale(0.025f, 0.025f, 0.025f);
+			pengo.setAnimation(&penguin_walk);
+			pengo.isAnimatied = true;
+			pengo.hasShadow = false;
+			Penguins.push_back(pengo);
 		}
-		else {
-			selected = &Penguins[0];
-		}
-	}
-	if (isDebug) {
-		if (key == ',') {
-			if (ObjectIndex < Objects.size() - 1)
-				ObjectIndex++;
-			selected = &Objects[ObjectIndex];
-		}
-		if (key == '.') {
-			if (ObjectIndex > 0)
-				ObjectIndex--;
-			selected = &Objects[ObjectIndex];
-		}
-		if (key == 'n') {
-			newObject(&iceberg);
+		if (object_state == OBJECTS) {
+			newObject(&Models[ModelIndex]);
 			ObjectIndex = Objects.size() - 1;
 			Objects[ObjectIndex].hasNormalMap = true;
 			selected = &Objects[ObjectIndex];
 		}
-		if (key == '[') {
-			if (ModelIndex < Models.size() - 1)
-				ModelIndex++;
-			selected->SwitchModel(&Models[ModelIndex]);
-		}
-		if (key == ']') {
-			if (ModelIndex > 0)
-				ModelIndex--;
-			selected->SwitchModel(&Models[ModelIndex]);
+		if (object_state == LIGHTS) {
+			Lights.push_back(PointLight(selected->position));
+			Lights[numPointLights].index = numPointLights;
+			Lights[numPointLights].Update(&lightShader);
+			numPointLights++;
+			lightShader.SetInteger("numPointLights", numPointLights, true);
 		}
 	}
+	if (object_state != PENGUINS) {
 
-	
+		if (key == '1')
+			debug_state = MOVING;
+		if (key == '2')
+			debug_state = ROTATING;
+		if (key == '3')
+			debug_state = SCALING;
+		if (key == '4')
+			debug_state = SWITCHING;
+		
+
+	}
 }
 
 int main(int argc, char** argv) {
