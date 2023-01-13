@@ -1,5 +1,5 @@
 # computer-graphics
-College work for CSU44052 Computer Graphics Module
+Simple renderer made for CSU44052 Computer Graphics Module
 
 Required Features
 https://youtu.be/yPX6zSs3IVY
